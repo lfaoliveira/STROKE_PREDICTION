@@ -1,15 +1,17 @@
 from enum import StrEnum
 
+import numpy as np
+import pandas as pd
 from torch.utils.data import Dataset
-from pandas import Series, DataFrame
+# from pandas import Series, DataFrame
 import pandera.pandas as pa
-from pandera.typing import DataFrame as PaDataFrame, Series as PaSeries
+from pandera.typing import DataFrame, Series
 from sklearn.preprocessing import StandardScaler
 from torch.types import Tensor
 from kagglehub import KaggleDatasetAdapter, dataset_download, dataset_load
+# import pandas
 
 LABELS_COLUMN = "stroke"
-
 
 class CATEGORICAL_COLUMNS(StrEnum):
     GENDER = "gender"
@@ -20,18 +22,18 @@ class CATEGORICAL_COLUMNS(StrEnum):
 
 
 class MySchema(pa.DataFrameModel):
-    id: PaSeries[int]
-    age: PaSeries[int]
-    gender: PaSeries[str]
-    ever_married: PaSeries[str]
-    work_type: PaSeries[str]
-    Residence_type: PaSeries[str]
-    smoking_status: PaSeries[str]
-    hypertension: PaSeries[int]
-    heart_disease: PaSeries[int]
-    avg_glucose_level: PaSeries[float]
-    bmi: PaSeries[float]
-    stroke: PaSeries[float]
+    id: Series[int]
+    age: Series[float]
+    gender: Series[str]
+    ever_married: Series[str]
+    work_type: Series[str]
+    Residence_type: Series[str]
+    smoking_status: Series[str]
+    hypertension: Series[int]
+    heart_disease: Series[int]
+    avg_glucose_level: Series[float]
+    bmi: Series[float] 
+    stroke: Series[int]
 
 
 
@@ -39,31 +41,16 @@ class StrokeDataset(Dataset):
     def __init__(self) -> None:
         super().__init__()
 
-        dataset_name = "fedesoriano/stroke-prediction-dataset"
-        dataset_download(dataset_name)
-        # Set the path to the file you'd like to load
-        file_path = "healthcare-dataset-stroke-data.csv"
-        print(f"FILE_PATH: {file_path}")
-
-        # Load the latest version
-        self.data: DataFrame = dataset_load(
-            KaggleDatasetAdapter.PANDAS,
-            "fedesoriano/stroke-prediction-dataset",
-            file_path,
-        )
-        print(f"DF NORMAL: {self.data.head()}\n")
-
-        assert isinstance(self.data, DataFrame)
+        self.read_df()
         STR_COL = list(CATEGORICAL_COLUMNS)
         ## AQUI VAI PREPARACAO DOS DADOS
         self.data_prep(STR_COL)
-
-        print(f"levels:\n {self.data.columns}\n")
+        print("\n")
         self.labels = self.data.loc[:, LABELS_COLUMN]
-
         self.data = self.data.drop(columns=LABELS_COLUMN)
 
     def __getitem__(self, index: Tensor | int):
+        print()
         if type(index) is int:
             return Tensor(self.data.loc[index].to_numpy()), Tensor(
                 [self.labels[index]]
@@ -76,6 +63,26 @@ class StrokeDataset(Dataset):
     def __len__(self):
         return len(self.data)
 
+    def read_df(self):
+        dataset_name = "fedesoriano/stroke-prediction-dataset"
+        dataset_download(dataset_name)
+        # Set the path to the file you'd like to load
+        file_path = "healthcare-dataset-stroke-data.csv"
+        print(f"FILE_PATH: {file_path}")
+
+        # Load the latest version
+        self.data: DataFrame[MySchema] = dataset_load(
+            KaggleDatasetAdapter.PANDAS,
+            dataset_name,
+            file_path,
+        )
+        # tira valores nulos pra evitar problemas
+        self.data = self.data.dropna()
+        #valida schema
+        validated = MySchema.validate(self.data)
+        print(f"DF NORMAL: {validated.head()}\n")
+        assert type(self.data) is pd.DataFrame
+        
     # funcao para preparacao de dados, caso seja necessario
     def data_prep(self, bad_columns: list[CATEGORICAL_COLUMNS]) -> None:
         STR_COL = bad_columns
