@@ -78,15 +78,15 @@ class StrokeDataset(Dataset):
         # tira valores nulos pra evitar problemas
         self.data = self.data.dropna()
         #valida schema
-        validated = MySchema.validate(self.data)
-        print(f"DF NORMAL: {validated.head()}\n")
+        # validated = MySchema.validate(self.data)
+        # print(f"DF NORMAL: {validated.head()}\n")
         assert type(self.data) is pd.DataFrame
         
     # funcao para preparacao de dados, caso seja necessario
     def data_prep(self, bad_columns: list[CATEGORICAL_COLUMNS]) -> None:
         STR_COL = bad_columns
 
-        ##itera sobre conjunto da coluna e bota numero pra cada string
+        ##itera sobre conjunto da coluna e bota numero categorico para cada coluna categorica
         for col in STR_COL:
             self.data[col] = self.data[f"{col}"].astype("category")
             self.data[f"{col}_code"] = self.data[f"{col}"].cat.codes

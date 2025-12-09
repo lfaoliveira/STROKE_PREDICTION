@@ -44,37 +44,48 @@ def data_init():
     return train_loader, val_loader, INPUT_DIMS
 
 
-train_loader, val_loader, INPUT_DIMS = data_init()
+def train():
+    train_loader, val_loader, INPUT_DIMS = data_init()
 
-HIDN_DIMS = 32
-N_CLASSES = 2
-EPOCHS = 2
-N_LAYERS = 5
+    HIDN_DIMS = 32
+    N_CLASSES = 2
+    EPOCHS = 2
+    N_LAYERS = 5
+    try:
+            
+        model = MLP(INPUT_DIMS, HIDN_DIMS, N_LAYERS, N_CLASSES)
+        #LAZY PASS
+        lazy_input = torch.zeros(INPUT_DIMS, dtype=torch.float32) 
+        print(f"LAZY SHAPE: {lazy_input.shape}")
+        model(lazy_input)
+        print(f"MODEL: {model}\n\n")
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        model.to(device)
+        params = model.parameters()
+        print(f"PARAMS: {params}")
+        optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
+        criterion = nn.CrossEntropyLoss()
 
-model = MLP(INPUT_DIMS, HIDN_DIMS, N_LAYERS, N_CLASSES)
-#LAZY PASS
-lazy_input = torch.zeros(INPUT_DIMS, dtype=torch.float32) 
-print(f"LAZY SHAPE: {lazy_input.shape}")
-model(lazy_input)
-print(f"MODEL: {model}\n\n")
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-model.to(device)
 
-optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
-criterion = nn.CrossEntropyLoss()
+        for epoch in range(EPOCHS):
+            print(f"EPOCH {epoch + 1}")
+            for (batch_x, batch_y) in train_loader:
+                logits = model(batch_x)
+                print(f"LOGITS {logits.shape}")
+                print(f"BATCH_Y {batch_y} {batch_y.shape}")
+                loss: Tensor = criterion(logits, batch_y)
+                print(f"LOSS: {loss.item()}")
+                if(type(loss) is not Tensor):
+                    raise Exception(f"Erro ao processar batch {epoch}")
 
-if __name__ == "__main__":
-    for epoch in range(EPOCHS):
-        print(f"EPOCH {epoch + 1}")
-        for (batch_x, batch_y) in train_loader:
-            logits = model(batch_x)
-            print(f"LOGITS {logits.shape}")
-            print(f"BATCH_Y {batch_y} {batch_y.shape}")
-            loss: Tensor = criterion(logits, batch_y)
-            print(f"LOSS: {loss.item()}")
-            if(type(loss) is not Tensor):
-                raise Exception(f"Erro ao processar batch {epoch}")
+                optimizer.zero_grad()
+                loss.backward()
+                optimizer.step()
 
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
+            for batch_x, batch_y in val_loader:
+                logits = model(batch_x)
+                val_loss = criterion(logits)
+                loss: Tensor = criterion(logits, batch_y)
+                print(f"LOSS: {val_loss.item()}")
+    except Exception as e:
+        print(f"EXCECAO AO TREINAR: {e}")
