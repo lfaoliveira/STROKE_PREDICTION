@@ -1,3 +1,8 @@
+import os
+
+if os.path.exists("/kaggle"):
+    os.chdir("/kaggle/working/PROJETO_PESS_DADOS/src")
+
 import numpy as np
 from sklearn.model_selection import train_test_split
 from torch.utils.data import DataLoader, TensorDataset
@@ -8,6 +13,7 @@ import torch
 import torch.nn as nn
 import lightning as L
 from lightning import seed_everything
+
 ## AUX_VARS
 BATCH_SIZE = 8
 WORKERS = 1
@@ -95,11 +101,15 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 dataset = StrokeDataset()
 INPUT_DIMS = dataset.data.shape[1]
 model = MLP(INPUT_DIMS, HIDN_DIMS, N_LAYERS, N_CLASSES)
-train_dataset, val_dataset = torch.utils.data.random_split(
-    dataset, [0.8, 0.2]
+train_dataset, val_dataset = torch.utils.data.random_split(dataset, [0.8, 0.2])
+train_loader = DataLoader(
+    train_dataset, batch_size=BATCH_SIZE, shuffle=False, num_workers=WORKERS
 )
-train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=False, num_workers=WORKERS)
-val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE, shuffle=False, num_workers=WORKERS)
+val_loader = DataLoader(
+    val_dataset, batch_size=BATCH_SIZE, shuffle=False, num_workers=WORKERS
+)
 
-trainer = L.Trainer(limit_train_batches=100, strategy="", max_epochs=1, devices = 1, accelerator="gpu")
-trainer.fit(model=model, train_dataloaders=train_loader, val_dataloaders=val_loader)
+trainer = L.Trainer(
+    limit_train_batches=100, strategy="", max_epochs=1, devices=1, accelerator="gpu", enable_autolog_hparams=True
+)
+trainer.fit(model=model, train_dataloaders=train_loader, val_dataloaders=val_loader,)
