@@ -3,16 +3,22 @@ import os
 if os.path.exists("/kaggle"):
     os.chdir("/kaggle/working/PROJETO_PESS_DADOS/src")
 
-import numpy as np
-from sklearn.model_selection import train_test_split
-from torch.utils.data import DataLoader, TensorDataset
-from torch import Tensor, from_numpy
+import mlflow
+
+# import numpy as np
+# from sklearn.model_selection import train_test_split
+from torch.utils.data import DataLoader
+
+# from torch import Tensor, from_numpy
 from DataProcesser.data import StrokeDataset
 from Models.model import MLP
 import torch
-import torch.nn as nn
+
+# import torch.nn as nn
 import lightning as L
 from lightning import seed_everything
+from lightning.pytorch.loggers import MLFlowLogger
+
 
 ## AUX_VARS
 BATCH_SIZE = 8
@@ -100,6 +106,12 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 dataset = StrokeDataset()
 INPUT_DIMS = dataset.data.shape[1]
+EXP_NAME = "stroke_1"
+# mlflow.pytorch.autolog(checkpoint=False)
+mlflow.set_tracking_uri("file:./mlruns")
+mlflow.set_experiment(EXP_NAME)
+
+
 model = MLP(INPUT_DIMS, HIDN_DIMS, N_LAYERS, N_CLASSES)
 train_dataset, val_dataset = torch.utils.data.random_split(dataset, [0.8, 0.2])
 train_loader = DataLoader(
@@ -109,7 +121,30 @@ val_loader = DataLoader(
     val_dataset, batch_size=BATCH_SIZE, shuffle=False, num_workers=WORKERS
 )
 
-trainer = L.Trainer(
-    limit_train_batches=100, strategy="", max_epochs=1, devices=1, accelerator="gpu", enable_autolog_hparams=True
+mlflow_logger = MLFlowLogger(
+    experiment_name=EXP_NAME, tracking_uri="file:./mlruns"
 )
-trainer.fit(model=model, train_dataloaders=train_loader, val_dataloaders=val_loader,)
+
+
+trainer = L.Trainer(
+    max_epochs=2,
+    devices=1,
+    accelerator="gpu",
+    enable_autolog_hparams=True,
+    logger=mlflow_logger,
+)
+# trainer.fit(model=model, train_dataloaders=train_loader, val_dataloaders=val_loader,)
+
+
+# MLflow run (wrap Lightning training)
+with mlflow.start_run(run_name="stroke_1"):
+    # log model hyperparams to MLflow manually
+    mlflow.log_params(dict(model.hparams))
+
+    trainer.fit(model, train_dataloaders=train_loader, val_dataloaders=val_loader)
+
+    # OPTIONAL: log best checkpoint to MLflow artifacts
+    # mlflow.log_artifact(checkpoint_callback.best_model_path)
+
+    # OPTIONAL: run test
+    # trainer.test(model, datamodule=dm)
