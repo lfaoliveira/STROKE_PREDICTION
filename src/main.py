@@ -50,14 +50,15 @@ N_CLASSES = 2
 EPOCHS = 2
 N_LAYERS = 5
 
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model = MLP(INPUT_DIMS, HIDN_DIMS, N_LAYERS, N_CLASSES)
 #LAZY PASS
-lazy_input = torch.zeros(INPUT_DIMS, dtype=torch.float32) 
+lazy_input = torch.zeros(INPUT_DIMS, dtype=torch.float32, device=device) 
 print(f"LAZY SHAPE: {lazy_input.shape}")
-model(lazy_input)
-print(f"MODEL: {model}\n\n")
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model.to(device)
+model(lazy_input)
+
+print(f"MODEL: {model}\n\n")
 # params = model.parameters()
 # print(f"PARAMS: {params}")
 optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
@@ -66,21 +67,30 @@ criterion = nn.CrossEntropyLoss()
 
 for epoch in range(EPOCHS):
     print(f"EPOCH {epoch + 1}")
+    loss_tensor = np.ndarray([BATCH_SIZE,1])
     for (batch_x, batch_y) in train_loader:
+        batch_x, batch_y = batch_x.to(device), batch_y.to(device)
         logits = model(batch_x)
         print(f"LOGITS {logits.shape}")
         print(f"BATCH_Y {batch_y} {batch_y.shape}")
         loss: Tensor = criterion(logits, batch_y)
-        print(f"LOSS: {loss.item()}")
-        if(type(loss) is not Tensor):
+        if(isinstance(loss, Tensor) is not True):
             raise Exception(f"Erro ao processar batch {epoch}")
+            
+        loss_tensor = np.append(loss_tensor, loss.numpy().item(), axis=0)
+        # print(f"LOSS: {loss.item()}")
+        
 
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
 
     for batch_x, batch_y in val_loader:
+        batch_x, batch_y = batch_x.to(device), batch_y.to(device)
+
         logits = model(batch_x)
-        val_loss = criterion(logits)
+        val_loss = criterion(logits, batch_y)
         loss: Tensor = criterion(logits, batch_y)
         print(f"LOSS: {val_loss.item()}")
+
+
