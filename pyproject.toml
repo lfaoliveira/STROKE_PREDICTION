@@ -10,8 +10,8 @@ dependencies = [
     "numpy>=2.3.5",
     "pandas>=2.3.3",
     "kagglehub>=0.3.13",
-    "torch<=2.4.1",
-    "torchvision<=0.19.1",
+    "torch=^2.4.0",
+    "torchvision=^0.19.1",
     "scikit-learn>=1.7.2",
     "pandera[pandas]>=0.27.0",
 ]
@@ -20,7 +20,7 @@ dependencies = [
 # Instala versao com CUDA apenas em ambientes Linux (pensando no Kaggle)
 torch = [
   { index = "pytorch-cpu", marker = "sys_platform != 'linux'" },
-  { index = "pytorch-cu121", marker = "sys_platform == 'linux'" },
+  { index = "pytorch-cu124", marker = "sys_platform == 'linux'" },
 ]
 # torchvision = [
 #   { index = "pytorch-cpu", marker = "sys_platform != 'linux'" },
@@ -35,6 +35,6 @@ explicit = true
 
 # INDEX GPU
 [[tool.uv.index]]
-name = "pytorch-cu121"
-url = "https://download.pytorch.org/whl/cu121"
+name = "pytorch-cu124"
+url = "https://download.pytorch.org/whl/cu124"
 explicit = true
