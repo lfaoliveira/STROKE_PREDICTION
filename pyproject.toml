@@ -10,8 +10,8 @@ dependencies = [
     "numpy>=2.3.5",
     "pandas>=2.3.3",
     "kagglehub>=0.3.13",
-    "torch=^2.4.0",
-    "torchvision=^0.19.1",
+    "torch>=2.4.0",
+    "torchvision>=0.19.1",
     "scikit-learn>=1.7.2",
     "pandera[pandas]>=0.27.0",
 ]
@@ -22,10 +22,11 @@ torch = [
   { index = "pytorch-cpu", marker = "sys_platform != 'linux'" },
   { index = "pytorch-cu124", marker = "sys_platform == 'linux'" },
 ]
-# torchvision = [
-#   { index = "pytorch-cpu", marker = "sys_platform != 'linux'" },
-#   { index = "pytorch-cu128", marker = "sys_platform == 'linux'" },
-# ]
+
+torchvision = [
+  { index = "pytorch-cpu", marker = "sys_platform != 'linux'" },
+  { index = "pytorch-cu124", marker = "sys_platform == 'linux'" },
+]
 
 # index CPU
 [[tool.uv.index]]
