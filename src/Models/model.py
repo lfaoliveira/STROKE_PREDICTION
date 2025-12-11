@@ -6,6 +6,8 @@ from lightning import LightningModule
 from sklearn.metrics import precision_recall_fscore_support
 import numpy as np
 from numpy.typing import ArrayLike
+
+
 class MLP(LightningModule):
     def __init__(
         self, input_dim: int, hidden_dims: int, n_layers: int, num_classes: int
@@ -45,7 +47,9 @@ class MLP(LightningModule):
         labels = torch.squeeze(labels.long())
 
         loss = nn.functional.cross_entropy(logits, labels)
-        prec, rec, f1, support = precision_recall_fscore_support(labels.numpy(), torch.argmax(logits, dim=1).numpy())
+        prec, rec, f1, support = precision_recall_fscore_support(
+            labels.numpy(), torch.argmax(logits, dim=1).numpy(), zero_division=0
+        )
 
         prec = np.mean(prec) if isinstance(prec, np.ndarray) else float(prec)
         rec = np.mean(rec) if isinstance(rec, np.ndarray) else float(rec)
