@@ -50,9 +50,9 @@ class StrokeDataset(Dataset):
     def __getitem__(self, index: Tensor | int):
         print()
         if type(index) is int:
-            return Tensor(self.data.loc[index].to_numpy()), Tensor([self.labels[index]])
+            return Tensor(self.data.iloc[index].to_numpy()), Tensor([self.labels.iloc[index]])
         elif type(index) is Tensor:
-            return self.data.loc[index.tolist()], self.labels[index.tolist()].to_numpy()
+            return self.data.iloc[index.tolist()], self.labels.iloc[pd.Index(index.tolist())].to_numpy()
         else:
             raise Exception("ERRO AO PEGAR DADOS")
 
@@ -72,8 +72,10 @@ class StrokeDataset(Dataset):
             dataset_name,
             file_path,
         )
+
         # tira valores nulos pra evitar problemas
-        self.data = self.data.dropna()
+        self.data = self.data.dropna().set_index("id")
+        self.data.to_csv("stroke.csv", sep=",")
         # valida schema
         # validated = MySchema.validate(self.data)
         # print(f"DF NORMAL: {validated.head()}\n")

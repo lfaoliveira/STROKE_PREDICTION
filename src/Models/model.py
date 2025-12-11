@@ -3,8 +3,9 @@ from torch import optim
 import torch.nn as nn
 import torch
 from lightning import LightningModule
-
-
+from sklearn.metrics import precision_recall_fscore_support
+import numpy as np
+from numpy.typing import ArrayLike
 class MLP(LightningModule):
     def __init__(
         self, input_dim: int, hidden_dims: int, n_layers: int, num_classes: int
@@ -22,26 +23,38 @@ class MLP(LightningModule):
         self.save_hyperparameters()
         # print(self.model)
 
-    def training_step(self, batch, batch_idx):
+    def training_step(self, batch: tuple[torch.Tensor, torch.Tensor], batch_idx: int):
         # training_step defines the train loop.
         # it is independent of forward
         data, labels = batch
         logits = self.model(data)
+        labels = torch.squeeze(labels.long())
+
         loss = nn.functional.cross_entropy(logits, labels)
         # Logging to TensorBoard (if installed) by default
         self.log("train_loss", loss, prog_bar=True)
         # self.log("train_acc", acc, prog_bar=True)
         return loss
 
-    def validation_step(self, batch, batch_idx):
+    def validation_step(self, batch: tuple[torch.Tensor, torch.Tensor], batch_idx: int):
         # training_step defines the train loop.
         # it is independent of forward
+
         data, labels = batch
         logits = self.model(data)
+        labels = torch.squeeze(labels.long())
+
         loss = nn.functional.cross_entropy(logits, labels)
-        # Logging to TensorBoard (if installed) by default
+        prec, rec, f1, support = precision_recall_fscore_support(labels.numpy(), torch.argmax(logits, dim=1).numpy())
+
+        prec = np.mean(prec) if isinstance(prec, np.ndarray) else float(prec)
+        rec = np.mean(rec) if isinstance(rec, np.ndarray) else float(rec)
+        f1 = np.mean(f1) if isinstance(f1, np.ndarray) else float(f1)
+
         self.log("val_loss", loss, prog_bar=True)
-        # self.log("val_acc", acc, prog_bar=True)
+        self.log("val_prec", float(prec), prog_bar=False)
+        self.log("val_rec", float(rec), prog_bar=False)
+        self.log("val_f1", float(f1), prog_bar=False)
         return loss
 
     def configure_optimizers(self):
