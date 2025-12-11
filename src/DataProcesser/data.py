@@ -36,6 +36,8 @@ class MySchema(pa.DataFrameModel):
 
 
 class StrokeDataset(Dataset):
+    data: DataFrame[MySchema]
+
     def __init__(self) -> None:
         super().__init__()
 
@@ -47,7 +49,6 @@ class StrokeDataset(Dataset):
         print(f"DF DROPADO: {self.data.head()}\n")
 
     def __getitem__(self, index: Tensor | int):
-        print()
         if type(index) is int:
             return Tensor(self.data.iloc[index].to_numpy()), Tensor(
                 [self.labels.iloc[index]]
@@ -66,27 +67,23 @@ class StrokeDataset(Dataset):
         dataset_name = "fedesoriano/stroke-prediction-dataset"
         dataset_download(dataset_name)
         # Set the path to the file you'd like to load
-        file_path = "healthcare-dataset-stroke-data.csv"
+        dataset_path = "healthcare-dataset-stroke-data.csv"
 
         local_filename = "stroke.csv"
         if not os.path.exists(local_filename):
-            # Load the latest version
-            self.data: DataFrame[MySchema] = dataset_load(
+            data = dataset_load(
                 KaggleDatasetAdapter.PANDAS,
                 dataset_name,
-                file_path,
+                dataset_path,
             )
-            self.data.to_csv(local_filename, sep=",")
+            data.to_csv(local_filename, sep=",")
         else:
-            self.data = DataFrame[MySchema](pd.read_csv(local_filename))
+            data = pd.read_csv(local_filename)
 
         # tira valores nulos pra evitar problemas
-        self.data = self.data.dropna().set_index("id")
-
+        data = data.dropna().set_index("id")
         # valida schema
-
-        # gera erro se nao igualar o schema
-        self.data = MySchema.validate(self.data)
+        self.data = MySchema.validate(data)
 
     # funcao para preparacao de dados, caso seja necessario
     def data_prep(self, bad_columns: list[CATEGORICAL_COLUMNS]) -> None:
@@ -98,7 +95,7 @@ class StrokeDataset(Dataset):
             self.data[f"{col}_code"] = self.data[f"{col}"].cat.codes
 
         self.data = self.data.drop(columns=STR_COL)
-        self.labels = self.data.loc[:, LABELS_COLUMN]
+        self.labels: pd.Series[int] = self.data.loc[:, LABELS_COLUMN]
         self.data = self.data.drop(columns=LABELS_COLUMN)
 
         ## standard scaler pra normalizar dados para media 0 e desvio padrao 1
