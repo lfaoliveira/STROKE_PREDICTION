@@ -50,9 +50,13 @@ class StrokeDataset(Dataset):
     def __getitem__(self, index: Tensor | int):
         print()
         if type(index) is int:
-            return Tensor(self.data.iloc[index].to_numpy()), Tensor([self.labels.iloc[index]])
+            return Tensor(self.data.iloc[index].to_numpy()), Tensor(
+                [self.labels.iloc[index]]
+            )
         elif type(index) is Tensor:
-            return self.data.iloc[index.tolist()], self.labels.iloc[pd.Index(index.tolist())].to_numpy()
+            return self.data.iloc[index.tolist()], self.labels.iloc[
+                pd.Index(index.tolist())
+            ].to_numpy()
         else:
             raise Exception("ERRO AO PEGAR DADOS")
 

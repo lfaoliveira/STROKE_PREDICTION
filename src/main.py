@@ -3,6 +3,8 @@ import os
 if os.path.exists("/kaggle"):
     os.chdir("/kaggle/working/PROJETO_PESS_DADOS/src")
     os.environ["AMBIENTE"] = "KAGGLE"
+elif os.path.exists("/content"):
+    os.environ["AMBIENTE"] = "COLAB"
 else:
     os.environ["AMBIENTE"] = "LOCAL"
 
@@ -22,7 +24,7 @@ def main():
     RAND_SEED = 42
     seed_everything(RAND_SEED)
     BATCH_SIZE = 8
-    WORKERS = 1
+    WORKERS = 1 if os.environ["AMBIENTE"] == "LOCAL" else 4
     EPOCHS = 2
     EXP_NAME = "stroke_1"
     RUN_ID = "stroke_teste"
