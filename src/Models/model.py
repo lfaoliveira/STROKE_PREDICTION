@@ -48,7 +48,7 @@ class MLP(LightningModule):
 
         loss = nn.functional.cross_entropy(logits, labels)
         prec, rec, f1, support = precision_recall_fscore_support(
-            labels.numpy(), torch.argmax(logits, dim=1).numpy(), zero_division=0
+            labels.numpy(force=True), torch.argmax(logits, dim=1).numpy(force=True), zero_division=0
         )
 
         prec = np.mean(prec) if isinstance(prec, np.ndarray) else float(prec)

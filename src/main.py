@@ -52,7 +52,7 @@ def main():
         val_dataset,
         batch_size=BATCH_SIZE,
         shuffle=False,
-        num_workers=WORKERS,
+        num_workers=WORKERS if os.environ["AMBIENTE"] == "LOCAL" else WORKERS + 3,
         persistent_workers=True,
     )
 
@@ -61,7 +61,7 @@ def main():
     trainer = L.Trainer(
         max_epochs=EPOCHS,
         devices=1,
-        accelerator="cpu",
+        accelerator="cpu" if os.environ["AMBIENTE"] == "LOCAL" else "gpu",
         enable_autolog_hparams=True,
         logger=mlflow_logger,
     )
