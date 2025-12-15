@@ -1,4 +1,6 @@
 ##codigo dos modelos
+import os
+import mlflow
 from torch import optim
 import torch.nn as nn
 import torch
@@ -61,6 +63,17 @@ class MLP(LightningModule):
         self.log("val_prec", float(prec), prog_bar=False)
         self.log("val_rec", float(rec), prog_bar=False)
         self.log("val_f1", float(f1), prog_bar=False)
+        print(f"Current experiment: {mlflow.get_experiment(mlflow.active_run().info.experiment_id).name if mlflow.active_run() else 'No active run'}")
+        test_artifact_path = "test_artifact.txt"
+        with open(test_artifact_path, "w") as f:
+            f.write("This is a test artifact to check MLflow save location")
+        mlflow.log_artifact(test_artifact_path)
+        try:
+            os.remove(test_artifact_path)
+        except:
+            pass
+        
+   
         return loss
 
     def configure_optimizers(self):
