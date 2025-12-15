@@ -29,7 +29,7 @@ def main():
     WORKERS = 1
     EPOCHS = 2
     EXP_NAME = "stroke_1"
-    RUN_NAME = "stroke_teste"
+    RUN_NAME = None #   "stroke_teste"
     MLF_TRACK_URI = "sqlite:///mlflow.db"
     AMBIENTE = os.environ["AMBIENTE"]
     # MLF_TRACK_URI = "file:./mlruns"
@@ -62,7 +62,7 @@ def main():
         num_workers=WORKERS,
         persistent_workers=True,
     )
-    mlflow_logger = MLFlowLogger(experiment_name=EXP_NAME, tracking_uri=MLF_TRACK_URI)
+    mlflow_logger = MLFlowLogger(experiment_name=EXP_NAME, tracking_uri=MLF_TRACK_URI, log_model=True)
 
     trainer = Trainer(
         max_epochs=EPOCHS,
