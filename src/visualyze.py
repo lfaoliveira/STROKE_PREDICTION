@@ -6,7 +6,7 @@ if __name__ == "__main__":
             "mlflow",
             "ui",
             "--backend-store-uri",
-            "sqlite:///mlruns.db",
+            "sqlite:///mlflow.db",
             "--default-artifact-root",
             "./mlruns",
             "--host",
