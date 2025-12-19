@@ -1,7 +1,7 @@
 from enum import StrEnum
 import os
 import pandas as pd
-from torch.utils.data import Dataset
+from torch.utils.data import Dataset, DataLoader, random_split
 
 import pandera.pandas as pa
 from pandera.typing import DataFrame, Series, Index
@@ -104,3 +104,23 @@ class StrokeDataset(Dataset):
         self.data = DataFrame(
             scaled_values, columns=self.data.columns, index=self.data.index
         )
+    def create_dataloaders(self, BATCH_SIZE: int, WORKERS: int):
+    
+        train_dataset, val_dataset = random_split(self, [0.8, 0.2])
+
+        train_loader = DataLoader(
+            train_dataset,
+            batch_size=BATCH_SIZE,
+            shuffle=False,
+            num_workers=WORKERS,
+            persistent_workers=True,
+        )
+
+        val_loader = DataLoader(
+            val_dataset,
+            batch_size=BATCH_SIZE,
+            shuffle=False,
+            num_workers=WORKERS,
+            persistent_workers=True,
+        )
+        return train_loader, val_loader

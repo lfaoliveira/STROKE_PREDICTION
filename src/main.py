@@ -20,30 +20,11 @@ from lightning.pytorch.loggers import MLFlowLogger
 from mlflow.pytorch import autolog
 from torch.utils.data import Dataset
 
-def create_dataloaders(dataset: Dataset, BATCH_SIZE: int, WORKERS: int):
-    
-    train_dataset, val_dataset = torch.utils.data.random_split(dataset, [0.8, 0.2])
-
-    train_loader = DataLoader(
-        train_dataset,
-        batch_size=BATCH_SIZE,
-        shuffle=False,
-        num_workers=WORKERS,
-        persistent_workers=True,
-    )
-
-    val_loader = DataLoader(
-        val_dataset,
-        batch_size=BATCH_SIZE,
-        shuffle=False,
-        num_workers=WORKERS,
-        persistent_workers=True,
-    )
-    return train_loader, val_loader
 
 
 ## -----------------------------COLAR NO KAGGLE------------------
 def main():
+    ###------SEEDS---------###
     RAND_SEED = 42
     seed_everything(RAND_SEED)
     ## ----------VARIAVEIS TREINO-----------
@@ -67,7 +48,7 @@ def main():
     N_LAYERS = 5
 
     dataset = StrokeDataset()
-    train_loader, val_loader = create_dataloaders(dataset, BATCH_SIZE, WORKERS)
+    train_loader, val_loader = dataset.create_dataloaders(BATCH_SIZE, WORKERS)
     
     INPUT_DIMS = dataset.data.shape[1]
     model = MLP(INPUT_DIMS, HIDN_DIMS, N_LAYERS, N_CLASSES)
