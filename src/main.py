@@ -11,14 +11,11 @@ else:
     os.environ["AMBIENTE"] = "LOCAL"
 
 import mlflow
-from torch.utils.data import DataLoader
 from DataProcesser.data import StrokeDataset
 from Models.model import MLP
-import torch
 from lightning import seed_everything, Trainer
 from lightning.pytorch.loggers import MLFlowLogger
 from mlflow.pytorch import autolog
-from torch.utils.data import Dataset
 
 
 
