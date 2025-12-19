@@ -30,12 +30,16 @@ def main():
     WORKERS = cpus if cpus is not None else 1
     EPOCHS = 2
     EXP_NAME = "stroke_1"
-    RUN_NAME = None #   "stroke_teste"
+    RUN_NAME = None  #   "stroke_teste"
     MLF_TRACK_URI = "sqlite:///mlflow.db"
     AMBIENTE = os.environ["AMBIENTE"]
     # MLF_TRACK_URI = "file:./mlruns"
     # mlflow.set_tracking_uri("file:./mlruns")
     # mlflow.set_experiment(EXP_NAME)
+
+    mlflow.set_tracking_uri(MLF_TRACK_URI)
+    mlflow.set_experiment(EXP_NAME)
+    autolog(log_models=True, checkpoint=True, exclusive=False)
 
     ## ----------VARIAVEIS MODELO-----------
     HIDN_DIMS = 32
@@ -63,23 +67,28 @@ def main():
         num_workers=WORKERS,
         persistent_workers=True,
     )
-    mlflow_logger = MLFlowLogger(experiment_name=EXP_NAME, tracking_uri=MLF_TRACK_URI, log_model=True)
 
-    trainer = Trainer(
-        max_epochs=EPOCHS,
-        devices=1,
-        accelerator="gpu" if AMBIENTE == "KAGGLE" else "cpu",
-        # enable_autolog_hparams=True,
-        logger=mlflow_logger,
-        enable_checkpointing=False,
-    )
-
-    autolog(log_models=True, checkpoint=True)
-    with mlflow.start_run(run_name=RUN_NAME):
+    with mlflow.start_run(run_name=RUN_NAME) as run:
+        active_run_id = run.info.run_id
         # log model hyperparams to MLflow manually
-        mlflow.log_params(dict(model.hparams))
-        trainer.fit(model, train_dataloaders=train_loader, val_dataloaders=val_loader)
+        mlflow_logger = MLFlowLogger(
+            experiment_name=EXP_NAME,
+            tracking_uri=MLF_TRACK_URI,
+            log_model=True,
+            run_id=active_run_id,
+        )
 
+        trainer = Trainer(
+            max_epochs=EPOCHS,
+            devices=1,
+            accelerator="gpu" if AMBIENTE == "KAGGLE" else "cpu",
+            # enable_autolog_hparams=True,
+            logger=mlflow_logger,
+            enable_checkpointing=False,
+        )
+
+        trainer.fit(model, train_dataloaders=train_loader, val_dataloaders=val_loader)
+        mlflow.log_params(dict(model.hparams))
 
 
 if __name__ == "__main__":
