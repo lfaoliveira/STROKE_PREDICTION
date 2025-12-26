@@ -8,6 +8,7 @@ if os.path.exists("/kaggle"):
     os.chdir("/kaggle/working/PROJETO_PESS_DADOS/src")
     os.environ["AMBIENTE"] = "KAGGLE"
 elif os.path.exists("/content"):
+    PATH_DATASET = "/content/DELETAR"
     os.environ["AMBIENTE"] = "COLAB"
 else:
     PATH_DATASET = os.path.abspath(".")
@@ -30,7 +31,7 @@ def main():
     RAND_SEED = 42
     seed_everything(RAND_SEED)
     ## ----------VARIAVEIS TREINO-----------
-    BATCH_SIZE = 8
+    # BATCH_SIZE = 8
     cpus = os.cpu_count()
     WORKERS = cpus if cpus is not None else 1
     EPOCHS = 2
@@ -38,7 +39,10 @@ def main():
     #### -------- VARIAVEIS DE LOGGING ------------
     EXP_NAME = "stroke_1"
     RUN_NAME: str | None = None  # noma da RUN: pode ser aleatório ou definido
-    MLF_TRACK_URI = "sqlite:///mlflow.db"
+    if os.environ["AMBIENTE"] == "KAGGLE":
+        MLF_TRACK_URI = f"sqlite:///{PATH_DATASET}/mlflow.db"
+    else:
+        MLF_TRACK_URI = "sqlite:///mlflow.db"
     AMBIENTE = os.environ["AMBIENTE"]
 
     mlflow.set_tracking_uri(MLF_TRACK_URI)
@@ -51,7 +55,6 @@ def main():
     # N_LAYERS = 5
 
     dataset = StrokeDataset()
-    train_loader, val_loader = dataset.create_dataloaders(BATCH_SIZE, WORKERS)
 
     INPUT_DIMS = dataset.data.shape[1]
 

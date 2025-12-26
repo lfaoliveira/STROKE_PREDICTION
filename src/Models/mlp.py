@@ -16,7 +16,8 @@ class MLP(LightningModule):
         num_classes: int,
         **kwargs,
     ):
-        self.hyperparams = kwargs.get("hyperparameters")
+        self.hyperparams: dict[str, float|int] = kwargs.get("hyperparameters", {})
+        
         super().__init__()
         self.model = nn.Sequential(
             nn.Linear(input_dim, hidden_dims, dtype=torch.float32),
@@ -70,10 +71,10 @@ class MLP(LightningModule):
         return loss
 
     def configure_optimizers(self):
-        lr = self.hparams.get("lr", 1e-5)
-        beta0 = self.hparams.get("beta0", 0.99)
-        beta1 = self.hparams.get("beat1", 0.9999)
-        weight_decay = self.hparams.get("weight_decay", 1e-5)
+        lr = self.hyperparams.get("lr", 1e-5)
+        beta0 = self.hyperparams.get("beta0", 0.99)
+        beta1 = self.hyperparams.get("beat1", 0.9999)
+        weight_decay = self.hyperparams.get("weight_decay", 1e-5)
         optimizer = optim.Adam(
             self.parameters(), lr=lr, betas=(beta0, beta1), weight_decay=weight_decay
         )
