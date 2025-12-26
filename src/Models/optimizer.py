@@ -1,5 +1,6 @@
-from typing import Dict
+from typing import Any, Dict
 import optuna
+from optuna import TrialPruned 
 
 
 class Optimizer:
@@ -18,6 +19,8 @@ class Optimizer:
         # Banco de dados SQLite para armazenar os resultados (opcional)
         self.STUDY_DB_URL = f"sqlite:///{self.STUDY_NAME}.db"
         self.OPTIMIZER = OPTIMIZER
+
+        self.minimize = True
 
         if self.OPTIMIZER is None or self.OPTIMIZER.lower() == "auto":
             raise ValueError("ESCOLHA UM OTIMIZADOR !")
@@ -102,7 +105,7 @@ class Optimizer:
                     cls = trainer.metrics.get("val/cls_loss")
                     box = trainer.metrics.get("val/box_loss")
                     if any(elem == float("inf") for elem in [dfl, cls, box]):
-                        print(f"infinite loss:")
+                        print("infinite loss:")
                         val_loss = float("inf")
                         raise Exception("infinite loss")
                     else:
@@ -177,28 +180,7 @@ class Optimizer:
 
             batch = trial.suggest_categorical("batch", [-1, 4, 8, 16])
             # imgsz = trial.suggest_categorical("imgsz", [800, 1000, 1200, 1600])
-            imgsz = 1000
-            # Treinar modelo com hiperparâmetros do trial
-            results = model.train(
-                data=self.PATH_CONFIG_MODELO,
-                epochs=self.EPOCHS_PER_TRIAL,
-                batch=int(batch),
-                imgsz=int(imgsz),
-                task="detect",
-                optimizer=self.OPTIMIZER,
-                verbose=False,  # Reduzir logs durante otimização
-                save=False,  # Não salvar checkpoints intermediários
-                plots=False,  # Não gerar plots para economizar tempo
-                cache=True,  # acelerar otimizacao
-                pretrained=True,
-                close_mosaic=10,
-                scale=0.3,
-                mixup=0.1,
-                degrees=0.0,
-                workers=8,
-                seed=RAND_STATE_GERAL,
-                **hyperparams,  # Aplicar hiperparâmetros sugeridos
-            )
+            
             if not results:
                 raise Exception("RESULTADO NULO!")
             # Extrair métricas de validação do último epoch

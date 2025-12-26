@@ -9,9 +9,14 @@ import numpy as np
 
 class MLP(LightningModule):
     def __init__(
-        self, input_dim: int, hidden_dims: int, n_layers: int, num_classes: int, **kwargs
+        self,
+        input_dim: int,
+        hidden_dims: int,
+        n_layers: int,
+        num_classes: int,
+        **kwargs,
     ):
-        self.hyperparams = kwargs.get("hyperparameters")  
+        self.hyperparams = kwargs.get("hyperparameters")
         super().__init__()
         self.model = nn.Sequential(
             nn.Linear(input_dim, hidden_dims, dtype=torch.float32),
@@ -65,7 +70,13 @@ class MLP(LightningModule):
         return loss
 
     def configure_optimizers(self):
-        optimizer = optim.Adam(self.parameters(), lr=1e-3)
+        lr = self.hparams.get("lr", 1e-5)
+        beta0 = self.hparams.get("beta0", 0.99)
+        beta1 = self.hparams.get("beat1", 0.9999)
+        weight_decay = self.hparams.get("weight_decay", 1e-5)
+        optimizer = optim.Adam(
+            self.parameters(), lr=lr, betas=(beta0, beta1), weight_decay=weight_decay
+        )
         return optimizer
 
     def forward(self, x) -> torch.Tensor:
