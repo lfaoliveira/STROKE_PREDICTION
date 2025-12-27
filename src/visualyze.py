@@ -24,8 +24,11 @@ def see_model(database: pathlib.Path, folder: pathlib.Path):
 if __name__ == "__main__":
     PATH_RES_ZIPADO = Path("c:\\Users\\Eu\\Downloads\\resultado_kaggle_stroke_1.zip")
     DIR = Path(Path.cwd(), PATH_RES_ZIPADO.name.replace(".zip", ""))
-    if not DIR.exists():
-        DIR.mkdir()
-        shutil.unpack_archive(PATH_RES_ZIPADO, DIR)
 
+    if DIR.exists():
+        shutil.rmtree(DIR)
+    DIR.mkdir()
+    shutil.unpack_archive(PATH_RES_ZIPADO, DIR)
+
+    print("COMECANDO SUBPROCESSO!\n")
     see_model(DIR / "mlflow.db", DIR / "mlruns")

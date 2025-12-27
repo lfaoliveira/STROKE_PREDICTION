@@ -62,7 +62,7 @@ def main():
         MLF_TRACK_URI = f"sqlite:///{PATH_DATASET}/mlflow.db"
     else:
         MLF_TRACK_URI = "sqlite:///mlflow.db"
-    AMBIENTE = os.environ["AMBIENTE"] == "KAGGLE"
+    AMBIENTE = os.environ["AMBIENTE"]
     GPU = True if AMBIENTE in ["KAGGLE", "COLAB"] else False
 
     mlflow.set_tracking_uri(MLF_TRACK_URI)
