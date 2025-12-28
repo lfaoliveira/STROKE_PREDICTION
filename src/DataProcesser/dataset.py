@@ -94,7 +94,7 @@ class StrokeDataset(Dataset):
 
         self.dataframe = self.dataframe.drop(columns=STR_COL)
         # labels before normalization (doesnt need to be normalized)
-        self.labels = from_numpy(self.dataframe.loc[:, LABELS_COLUMN].values)
+        self.labels = from_numpy(self.dataframe.loc[:, LABELS_COLUMN].values).float()
         self.dataframe = self.dataframe.drop(columns=LABELS_COLUMN)
 
         # standard scaler to normalize dataframe to mean 0 and standard deviation 1
@@ -103,7 +103,7 @@ class StrokeDataset(Dataset):
         self.dataframe = DataFrame(
             scaled_values, columns=self.dataframe.columns, index=self.dataframe.index
         )
-        self.data = from_numpy(self.dataframe.values)
+        self.data = from_numpy(self.dataframe.values).float()
 
         print("\n")
         print(f"DATASET: {self.dataframe.head()}\n")

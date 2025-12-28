@@ -16,7 +16,7 @@ class StrokeDataModule(LightningDataModule):
         #NOTE: cuidado para nao carregar dados pesados demais na memoria (estoura memoria da GPU!!!)
         self.dataset = StrokeDataset()
 
-    # setup de transformacao e augmentation
+    # setup de transformacao e augmentation 
     def setup(self, stage=None):
         DATA_SPLIT = [0.8, 0.2]
         data, label = self.dataset[0]

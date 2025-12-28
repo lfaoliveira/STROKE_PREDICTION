@@ -77,6 +77,7 @@ def main():
     INPUT_DIMS = datamodule.input_dims or -1
     assert INPUT_DIMS > 0
     model = MLP(INPUT_DIMS, HIDN_DIMS, N_LAYERS, N_CLASSES)
+    _ = model(model.example_input_array)
 
     # loop principal de treinamento
     with mlflow.start_run(run_name=RUN_NAME) as run:
