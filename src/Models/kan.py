@@ -2,17 +2,23 @@
 from torch import optim
 import torch.nn as nn
 import torch
-from lightning import LightningModule
 from sklearn.metrics import precision_recall_fscore_support
 import numpy as np
 from kan import KAN
+from Models.interface import ClassificationModel
 
 
-class MyKan(LightningModule):
+class MyKan(ClassificationModel):
     def __init__(
-        self, input_dim: int, hidden_dims: int, n_layers: int, num_classes: int
+        self,
+        input_dim: int,
+        hidden_dims: int,
+        n_layers: int,
+        num_classes: int,
+        **kwargs,
     ):
         super().__init__()
+        self.hyperparams: dict[str, float | int] = kwargs.get("hyperparameters", {})
 
         width_arr: list[int] = [hidden_dims for _ in range(n_layers)]
         width_arr.insert(0, input_dim)
@@ -63,7 +69,13 @@ class MyKan(LightningModule):
         return loss
 
     def configure_optimizers(self):
-        optimizer = optim.Adam(self.parameters(), lr=1e-3)
+        lr = self.hyperparams.get("lr", 1e-5)
+        beta0 = self.hyperparams.get("beta0", 0.99)
+        beta1 = self.hyperparams.get("beat1", 0.9999)
+        weight_decay = self.hyperparams.get("weight_decay", 1e-5)
+        optimizer = optim.Adam(
+            self.parameters(), lr=lr, betas=(beta0, beta1), weight_decay=weight_decay
+        )
         return optimizer
 
     def forward(self, x) -> torch.Tensor:
