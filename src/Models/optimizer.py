@@ -1,6 +1,6 @@
 from typing import Any, Dict
 import optuna
-from optuna import TrialPruned 
+from optuna import TrialPruned
 
 
 class Optimizer:
@@ -76,18 +76,18 @@ class Optimizer:
         Returns:
             float: Valor da métrica a ser minimizada (soma das losses de validação)
         """
-        
+
         try:
             # Obter hiperparâmetros sugeridos pelo trial
             hyperparams = self.get_hyperparameters(trial)
 
-            print(f"\n{'='*60}")
+            print(f"\n{'=' * 60}")
             print(f"Iniciando Trial #{trial.number}")
-            print(f"{'='*60}")
+            print(f"{'=' * 60}")
             print("Hiperparâmetros do trial:")
             for param, value in hyperparams.items():
                 print(f"  {param}: {value}")
-            print(f"{'='*60}")
+            print(f"{'=' * 60}")
 
             best_val_loss = float("inf")  # Inicialize como infinito
             best_fitness = 0
@@ -156,7 +156,6 @@ class Optimizer:
                 except Exception as e:
                     print(f"Erro ao acessar val_loss: {e}")
                     if self.minimize:
-
                         trial.report(float("inf"), step=epoch)
                     else:
                         trial.report(0, step=epoch)
@@ -180,7 +179,7 @@ class Optimizer:
 
             batch = trial.suggest_categorical("batch", [-1, 4, 8, 16])
             # imgsz = trial.suggest_categorical("imgsz", [800, 1000, 1200, 1600])
-            
+
             if not results:
                 raise Exception("RESULTADO NULO!")
             # Extrair métricas de validação do último epoch
@@ -189,7 +188,6 @@ class Optimizer:
 
             # Pega melhor fitness do treinamento todo
             if self.minimize:
-
                 objective_value = float(best_val_loss)
             else:
                 objective_value = float(best_fitness)

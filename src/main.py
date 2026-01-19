@@ -11,13 +11,13 @@ elif Path("/content").exists():
     PATH_DATASET = Path("/content/DELETAR")
     os.environ["AMBIENTE"] = "COLAB"
 else:
-    PATH_DATASET = Path.cwd()
-    PATH_CODE = PATH_DATASET / "src"
-    os.chdir(PATH_CODE)
+    PATH_CODE = Path.cwd()  # Already in src directory
+    PATH_DATASET = PATH_CODE.parent  # Go up to PROJETO_PESS_DADOS
     os.environ["AMBIENTE"] = "LOCAL"
 import gc
 import mlflow
 from Models.mlp import MLP
+from Models.kan import MyKan
 from lightning import seed_everything, Trainer
 from lightning.pytorch.loggers import MLFlowLogger
 from mlflow.pytorch import autolog
@@ -78,7 +78,9 @@ def main():
 
     INPUT_DIMS = datamodule.input_dims or -1
     assert INPUT_DIMS > 0
-    model = MLP(INPUT_DIMS, HIDN_DIMS, N_LAYERS, N_CLASSES)
+    # model = MLP(INPUT_DIMS, HIDN_DIMS, N_LAYERS, N_CLASSES)
+    model = MyKan(INPUT_DIMS, HIDN_DIMS, N_LAYERS, N_CLASSES)
+    print(model)
     _ = model(model.example_input_array)
 
     # loop principal de treinamento
@@ -101,7 +103,6 @@ def main():
             devices=NUM_DEVICES,
             accelerator="gpu" if GPU else "cpu",
             num_nodes=NUM_NODES,
-            # enable_autolog_hparams=True,
             logger=mlflow_logger,
             enable_checkpointing=False,
             callbacks=[early_stopping],
@@ -124,7 +125,7 @@ if __name__ == "__main__":
     except Exception as e:
         raise e
     gc.collect()
-        
+
     if os.environ["AMBIENTE"] == "LOCAL":
         from visualyze import see_model
 

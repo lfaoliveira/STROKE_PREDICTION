@@ -16,8 +16,8 @@ class MLP(LightningModule):
         num_classes: int,
         **kwargs,
     ):
-        self.hyperparams: dict[str, float|int] = kwargs.get("hyperparameters", {})
-        
+        self.hyperparams: dict[str, float | int] = kwargs.get("hyperparameters", {})
+
         super().__init__()
         self.model = nn.Sequential(
             nn.Linear(input_dim, hidden_dims, dtype=torch.float32),
@@ -36,6 +36,8 @@ class MLP(LightningModule):
         # training_step defines the train loop.
         # it is independent of forward
         data, labels = batch
+        # print("TREINAMENTO: ", data.shape, labels.shape)
+
         logits = self.model(data)
         labels = torch.squeeze(labels.long())
 
@@ -50,6 +52,7 @@ class MLP(LightningModule):
         # it is independent of forward
 
         data, labels = batch
+        # print(data.shape, labels.shape)
         logits = self.model(data)
         labels = torch.squeeze(labels.long())
 

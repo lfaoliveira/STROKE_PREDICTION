@@ -5,6 +5,8 @@ Access at: ``LINK`` to see my analysis
 
 ## INSTRUCTIONS FOR DEVS:
 
+## Install python (check https://www.python.org/downloads/)
+
 ## Install uv  
 ```powershell
 ## WINDOWS
@@ -12,8 +14,6 @@ powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | ie
 
 ## LINUX
 curl -LsSf https://astral.sh/uv/install.sh | sh
-
-
 
 Install dependencies (uv creates a separate venv in cwd):
 

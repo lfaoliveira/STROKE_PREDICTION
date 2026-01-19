@@ -8,20 +8,20 @@ import numpy as np
 from kan import KAN
 
 
-class KAN_(LightningModule):
+class MyKan(LightningModule):
     def __init__(
         self, input_dim: int, hidden_dims: int, n_layers: int, num_classes: int
     ):
-        
-        self.model = nn.Sequential(
-            KAN(
-                width=[input_dim, 20, 20, 20, num_classes],
-                grid=12,
-                k=5,
-                symbolic_enabled=False,
-            )
+        super().__init__()
+
+        width_arr: list[int] = [hidden_dims for _ in range(n_layers)]
+        width_arr.insert(0, input_dim)
+        width_arr.append(num_classes)
+        self.model = KAN(
+            width=width_arr, grid=12, k=5, symbolic_enabled=False, auto_save=False
         )
-        self.example_input_array = torch.zeros(input_dim, dtype=torch.float32)
+
+        self.example_input_array = torch.zeros(1, input_dim, dtype=torch.float32)
         self.save_hyperparameters()
 
     def training_step(self, batch: tuple[torch.Tensor, torch.Tensor], batch_idx: int):
