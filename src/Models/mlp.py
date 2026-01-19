@@ -2,12 +2,12 @@
 from torch import optim
 import torch.nn as nn
 import torch
-from lightning import LightningModule
 from sklearn.metrics import precision_recall_fscore_support
 import numpy as np
+from Models.interface import ClassificationModel
 
 
-class MLP(LightningModule):
+class MLP(ClassificationModel):
     def __init__(
         self,
         input_dim: int,
