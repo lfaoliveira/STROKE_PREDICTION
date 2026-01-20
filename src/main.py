@@ -1,5 +1,6 @@
 from pathlib import Path
 import os
+from typing import Literal
 
 
 if Path("/kaggle").exists():
@@ -55,11 +56,14 @@ def main():
     NUM_DEVICES = 1 if GPU else 1
     NUM_NODES = 1
     BATCH_SIZE = 16
-    EPOCHS = 20
-    PATIENCE = 5
+    EPOCHS = 50
+    PATIENCE = 20
+    CHOICE: Literal["MLP", "KAN", "SVM", "XGBOOST"] = (
+        "MLP"  ## ESCOLHA DE MODELO A SER USADO
+    )
     #### -------- VARIAVEIS DE LOGGING ------------
-    EXP_NAME = "stroke_1"
-    RUN_NAME: str | None = None  # noma da RUN: pode ser aleatório ou definido
+    EXP_NAME = f"stroke_{CHOICE}_1"
+    RUN_NAME: str | None = None  # nome da RUN: pode ser aleatório ou definido
     MLF_TRACK_URI = f"sqlite:///{PATH_CODE}/mlflow.db"
 
     mlflow.set_tracking_uri(MLF_TRACK_URI)
@@ -78,8 +82,12 @@ def main():
 
     INPUT_DIMS = datamodule.input_dims or -1
     assert INPUT_DIMS > 0
-    # model = MLP(INPUT_DIMS, HIDN_DIMS, N_LAYERS, N_CLASSES)
-    model = MyKan(INPUT_DIMS, HIDN_DIMS, N_LAYERS, N_CLASSES)
+    if CHOICE == "MLP":
+        model = MLP(INPUT_DIMS, HIDN_DIMS, N_LAYERS, N_CLASSES)
+    elif CHOICE == "KAN":
+        model = MyKan(INPUT_DIMS, HIDN_DIMS, N_LAYERS, N_CLASSES)
+    else:
+        raise ValueError("ESCOLHA DE MODELO ERRADA!")
     print(model)
     _ = model(model.example_input_array)
 
