@@ -85,15 +85,25 @@ def grab_values(
 
 
 def train_metrics(models: list, output_dir: Path):
+    import os
+
+    # wether to plot only the best training
+    plot_best = bool(os.environ.get("OPTUNA", None))
     for choice in models:
         # Get the most recent experiment
         experiment = mlflow.get_experiment_by_name(f"stroke_{choice}_1")
         if experiment:
             # Get all runs from the experiment
+            
             runs = pd.DataFrame(
                 mlflow.search_runs(experiment_ids=[experiment.experiment_id])
             )
             assert isinstance(runs, pd.DataFrame)
+            if plot_best:
+                prefix = os.environ["OPTUNA_BEST_RUN_PREFIX"]
+                run_name = f"{prefix}_{choice}"
+                runs = runs[runs["tags.mlflow.runName"] == run_name]
+                assert len(runs) == 1
 
             output_dir.mkdir(exist_ok=True)
 
@@ -108,7 +118,7 @@ def train_metrics(models: list, output_dir: Path):
 
                 # Plot loss metrics
                 skip = grab_values(axes, available_metrics, client, run_id)
-                #skips if theres nothing to plot
+                # skips if theres nothing to plot
                 if skip:
                     continue
 
