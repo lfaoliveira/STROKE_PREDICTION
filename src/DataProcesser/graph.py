@@ -60,7 +60,7 @@ def grab_values(
 
     def is_eval_metric(name: str):
         # if f1, prec or rec is in name, returns true
-        return any(sufix in name.lower() for sufix in ["f_beta", "prec", "rec"])
+        return any(sufix in name.lower() for sufix in ["f_beta", "prec", "rec", "auc"])
 
     eval_metrics = [m for m in available_metrics if is_eval_metric(m)]
     if not loss_metrics:
@@ -138,7 +138,6 @@ def train_metrics(models: list, output_dir: Path):
                 for metric_name, steps_values in run_metrics_dict.items():
                     values = list(steps_values.values())
                     model_metrics[f"{metric_name}_avg"] = sum(values) / len(values)
-                    model_metrics[f"{metric_name}_final"] = values[-1]
 
                 plot_metrics(axes, choice, str(idx), output_dir, plot_best)
 
