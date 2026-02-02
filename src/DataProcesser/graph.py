@@ -3,6 +3,7 @@ from matplotlib import pyplot as plt
 import mlflow
 import pandas as pd
 
+
 def plot_metrics(axes, choice: str, run_id: str, output_dir: Path, plot_best: bool):
     """
     PLots metrics into axes
@@ -34,8 +35,12 @@ def plot_metrics(axes, choice: str, run_id: str, output_dir: Path, plot_best: bo
     plt.show()
     plt.close()
 
+
 def grab_values(
-    axes, available_metrics: list, client: mlflow.MlflowClient, run_id: str
+    axes,
+    available_metrics: list[str],
+    client: mlflow.MlflowClient,
+    run_id: str,
 ):
     """
     Iterates over available metrics, sorts them and plots into axes
@@ -49,37 +54,39 @@ def grab_values(
     :type run_id: str
     """
 
+    metrics_dict: dict[str, dict[int, float]] | None = {}
+
     loss_metrics = [m for m in available_metrics if "loss" in m.lower()]
+
+    def is_eval_metric(name: str):
+        # if f1, prec or rec is in name, returns true
+        return any(sufix in name.lower() for sufix in ["f_beta", "prec", "rec"])
+
+    eval_metrics = [m for m in available_metrics if is_eval_metric(m)]
     if not loss_metrics:
-        skip = True
-        return skip
+        metrics_dict = None
+        return metrics_dict
 
-    for metric_name in loss_metrics:
-        metric_history = client.get_metric_history(run_id, metric_name)
-        metric_history = sorted(metric_history, key=lambda m: m.step)
-
-        if metric_history:
-            steps = [m.step for m in metric_history]
-            values = [m.value for m in metric_history]
-
-            # for step, value in zip(steps, values):
-            #     print(f"{metric_name}: {step}: {value}")
-            axes[0].plot(steps, values, marker="o", label=metric_name)
-
-    # Plot accuracy/f1 metrics
+    # pega metricas e bota em dict
     for metric_name in available_metrics:
         metric_history = client.get_metric_history(run_id, metric_name)
         metric_history = sorted(metric_history, key=lambda m: m.step)
 
-        if metric_history and any(
-            x in metric_name.lower() for x in ["f1", "prec", "rec"]
-        ):
-            steps = [m.step for m in metric_history]
-            values = [m.value for m in metric_history]
+        if metric_history:
+            metrics_dict[metric_name] = {m.step: m.value for m in metric_history}
 
-            # for step, value in zip(steps, values):
-            #     print(f"{metric_name}: {step}: {value}")
-            axes[1].plot(steps, values, marker="o", label=metric_name)
+    for metric_name in loss_metrics:
+        current_metric_dict = metrics_dict[metric_name]
+        steps, values = current_metric_dict.items()
+        axes[0].plot(steps, values, marker="o", label=metric_name)
+
+    # Plot accuracy/f1 metrics
+    for metric_name in eval_metrics:
+        current_metric_dict = metrics_dict[metric_name]
+        steps, values = current_metric_dict.items()
+        axes[1].plot(steps, values, marker="o", label=metric_name)
+
+    return metrics_dict
 
 
 def train_metrics(models: list, output_dir: Path):
@@ -87,12 +94,16 @@ def train_metrics(models: list, output_dir: Path):
 
     # wether to plot only the best training
     plot_best = bool(os.environ.get("OPTUNA", None))
+
+    # Store metrics for all models
+    all_models_metrics = []
+
     for choice in models:
         # Get the most recent experiment
         experiment = mlflow.get_experiment_by_name(f"stroke_{choice}_1")
         if experiment:
             # Get all runs from the experiment
-            
+
             runs = pd.DataFrame(
                 mlflow.search_runs(experiment_ids=[experiment.experiment_id])
             )
@@ -105,6 +116,8 @@ def train_metrics(models: list, output_dir: Path):
 
             output_dir.mkdir(exist_ok=True)
 
+            model_metrics = {"model": choice}
+
             # Plot metrics for each run
             for idx, run_id in enumerate(runs["run_id"]):
                 client = mlflow.MlflowClient()
@@ -115,13 +128,24 @@ def train_metrics(models: list, output_dir: Path):
                 fig, axes = plt.subplots(2, 1, figsize=(10, 8))
 
                 # Plot loss metrics
-                skip = grab_values(axes, available_metrics, client, run_id)
+                run_metrics_dict = grab_values(axes, available_metrics, client, run_id)
                 # skips if theres nothing to plot
-                if skip:
+                if not run_metrics_dict:
+                    plt.close(fig)
                     continue
+
+                # Calculate averages for each metric
+                for metric_name, steps_values in run_metrics_dict.items():
+                    values = list(steps_values.values())
+                    model_metrics[f"{metric_name}_avg"] = sum(values) / len(values)
+                    model_metrics[f"{metric_name}_final"] = values[-1]
 
                 plot_metrics(axes, choice, str(idx), output_dir, plot_best)
 
+            all_models_metrics.append(model_metrics)
             print(f"Graphs exported to: {output_dir}")
         else:
             print(f"Experiment 'stroke_{choice}_1' not found")
+
+    # Create DataFrame with models as rows and metrics as columns
+    return pd.DataFrame(all_models_metrics).set_index("model")
