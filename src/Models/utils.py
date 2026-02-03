@@ -18,5 +18,6 @@ def calc_metrics(labels: torch.Tensor, logits: torch.Tensor):
     probabilities = torch.softmax(logits, dim=1).numpy(force=True)
     # NOTE: disabling ROC for now (need to adapt to binary classes)
     # roc_auc = roc_auc_score(labels.numpy(force=True), probabilities[:, 1])
+    roc_auc = 0
 
     return f_beta, prec, rec, roc_auc
