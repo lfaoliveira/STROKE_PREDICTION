@@ -109,9 +109,9 @@ def plot_all_runs_per_model(
 
     plt.tight_layout()
     plt.suptitle(
-        f"{choice} - All Optuna Runs Comparison", y=0.98, fontsize=14, fontweight="bold"
+        f"{choice} - All Optuna Runs Comparison", y=0.99, fontsize=10, fontweight="bold"
     )
-    plt.subplots_adjust(top=0.93, right=0.85)
+    plt.subplots_adjust(top=0.90, right=0.85)
 
     output_file = output_dir / f"all_runs_comparison_{choice}.png"
     plt.savefig(output_file, dpi=300, bbox_inches="tight")
