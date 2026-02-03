@@ -37,6 +37,7 @@ LABELS_COLUMN = "stroke"
 
 
 class StrokeDataset(Dataset):
+    original_df: DataFrame[MySchema]
     dataframe: DataFrame[MySchema]
     data: Tensor
     labels: Tensor
@@ -48,20 +49,20 @@ class StrokeDataset(Dataset):
         STR_COL = list(CATEGORICAL_COLUMNS)
         self.data_prep(STR_COL)
 
-    def __getitem__(self, index: Tensor | list[int]| int):
+    def __getitem__(self, index: Tensor | list[int] | int):
         return self.data[index], self.labels[index]
 
     def __len__(self):
         return len(self.data)
 
     def read_df(self):
-        dataset_name = "fedesoriano/stroke-prediction-dataset"
-        dataset_download(dataset_name)
-        # Set the path to the file you'd like to load
-        dataset_path = "healthcare-dataset-stroke-data.csv"
-
         local_filename = "stroke.csv"
         if not os.path.exists(local_filename):
+            dataset_name = "fedesoriano/stroke-prediction-dataset"
+            dataset_download(dataset_name)
+            # Set the path to the file you'd like to load
+            dataset_path = "healthcare-dataset-stroke-data.csv"
+
             df = dataset_load(
                 KaggleDatasetAdapter.PANDAS,
                 dataset_name,
@@ -72,9 +73,10 @@ class StrokeDataset(Dataset):
             df = pd.read_csv(local_filename)
 
         # remove null values to avoid problems
-        df = df.dropna().set_index("id")
+        df = df.dropna().set_index("id").drop(columns=["Unnamed: 0"]).sort_index()
         # validate schema
         self.dataframe = MySchema.validate(df)
+        self.original_df = MySchema.validate(df)
 
     #
     def data_prep(self, bad_columns: list[CATEGORICAL_COLUMNS]) -> None:
@@ -106,4 +108,4 @@ class StrokeDataset(Dataset):
         self.data = from_numpy(self.dataframe.values).float()
 
         print("\n")
-        print(f"DATASET: {self.dataframe.head()}\n")
+        print(f"DATASET:\n{self.dataframe.head()}\n")
