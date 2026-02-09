@@ -73,7 +73,12 @@ class StrokeDataset(Dataset):
             df = pd.read_csv(local_filename)
 
         # remove null values to avoid problems
-        df = df.dropna().set_index("id").drop(columns=["Unnamed: 0"]).sort_index()
+        df = (
+            df.dropna()
+            .set_index("id")
+            .drop(columns=["Unnamed: 0"], errors="ignore")
+            .sort_index()
+        )
         # validate schema
         self.dataframe = MySchema.validate(df)
         self.original_df = MySchema.validate(df)
