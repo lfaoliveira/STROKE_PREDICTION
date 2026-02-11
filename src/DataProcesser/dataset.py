@@ -48,8 +48,8 @@ class StrokeDataset(Dataset):
 
         self.read_df()
         STR_COL = list(CATEGORICAL_COLUMNS)
-        self.data_prep(STR_COL)
         self.LABELS_COLUMN = "stroke"
+        self.data_prep(STR_COL)
 
     def __getitem__(self, index: Tensor | list[int] | int):
         return self.data[index], self.labels[index]
