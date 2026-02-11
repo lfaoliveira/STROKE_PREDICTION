@@ -42,6 +42,7 @@ class StrokeDataset(Dataset):
     dataframe: DataFrame[MySchema]
     data: Tensor
     labels: Tensor
+    LABELS_COLUMN: str
 
     def __init__(self) -> None:
         super().__init__()
