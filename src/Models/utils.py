@@ -3,8 +3,6 @@ import pandas as pd
 from sklearn.metrics import precision_recall_fscore_support, roc_auc_score
 import torch
 
-from Models.interface import ClassificationModel
-
 
 def calc_metrics(labels: torch.Tensor, logits: torch.Tensor):
     prec, rec, f_beta, support = precision_recall_fscore_support(
@@ -56,29 +54,8 @@ def analyse_test(
     ]
     choices = ["TP", "FP", "FN", "TN"]
     results = np.select(conditions, choices, default="ERROR")
-    # print(f"CLASSIFY RESULTS: {results}")
 
-    # 3. Extrair as colunas originais e resetar o índice para alinhar no concat
-    # Isso garante que todas as colunas do original_df sejam incluídas
-    original_rows = test_dataset.dataset.original_df.iloc[dataset_indices].reset_index(
-        drop=True
-    )
-
-    # 4. Criar o DataFrame de métricas do modelo
-    metrics_df = pd.DataFrame(
-        {
-            "dataset_indices": dataset_indices,
-            "predictions": preds_np,
-            "labels": labels_np,
-            "diagnostic": results,
-        }
-    )
-
-    # 5. Concatenar horizontalmente (axis=1) para unir métricas e dados originais
-    # Como ambos têm o mesmo número de linhas e índices resetados, o alinhamento é perfeito
-    batch_results = pd.concat([metrics_df, original_rows], axis=1)
-
-    # 6. Set pred and error columns for all indexes of the batch in output_df
+    # 3. Set pred and error columns for all indexes of the batch in output_df
     # Build a DataFrame aligned by the original dataset indices so insertion
     # uses index alignment instead of positional assignment
     batch_metrics_df = pd.DataFrame(

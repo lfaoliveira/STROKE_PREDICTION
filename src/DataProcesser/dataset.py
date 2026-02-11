@@ -1,5 +1,7 @@
 from enum import StrEnum
 import os
+from typing import Optional
+import numpy as np
 import pandas as pd
 from torch.utils.data import Dataset
 import pandera.pandas as pa
@@ -31,9 +33,8 @@ class MySchema(pa.DataFrameModel):
     avg_glucose_level: Series[float]
     bmi: Series[float]
     stroke: Series[int]
-
-
-LABELS_COLUMN = "stroke"
+    pred: Optional[Series[int]]
+    error: Optional[Series[str]]
 
 
 class StrokeDataset(Dataset):
@@ -48,6 +49,7 @@ class StrokeDataset(Dataset):
         self.read_df()
         STR_COL = list(CATEGORICAL_COLUMNS)
         self.data_prep(STR_COL)
+        self.LABELS_COLUMN = "stroke"
 
     def __getitem__(self, index: Tensor | list[int] | int):
         return self.data[index], self.labels[index]
@@ -83,7 +85,6 @@ class StrokeDataset(Dataset):
         self.dataframe = MySchema.validate(df)
         self.original_df = MySchema.validate(df)
 
-    #
     def data_prep(self, bad_columns: list[CATEGORICAL_COLUMNS]) -> None:
         """
         function for data normalization
@@ -101,8 +102,10 @@ class StrokeDataset(Dataset):
 
         self.dataframe = self.dataframe.drop(columns=STR_COL)
         # labels before normalization (doesnt need to be normalized)
-        self.labels = from_numpy(self.dataframe.loc[:, LABELS_COLUMN].values).float()
-        self.dataframe = self.dataframe.drop(columns=LABELS_COLUMN)
+        self.labels = from_numpy(
+            self.dataframe.loc[:, self.LABELS_COLUMN].values
+        ).float()
+        self.dataframe = self.dataframe.drop(columns=self.LABELS_COLUMN)
 
         # standard scaler to normalize dataframe to mean 0 and standard deviation 1
         scaler = StandardScaler()
@@ -114,3 +117,69 @@ class StrokeDataset(Dataset):
 
         print("\n")
         print(f"DATASET:\n{self.dataframe.head()}\n")
+
+
+class ErrorModelDataset(Dataset):
+    original_df: DataFrame[MySchema]
+    dataframe: DataFrame[MySchema]
+    data: np.typing.NDArray
+    labels: np.typing.NDArray
+
+    def __init__(self, predictions_df: pd.DataFrame) -> None:
+        super().__init__()
+
+        self.clean_df(predictions_df)
+        STR_COL = list(CATEGORICAL_COLUMNS)
+        self.data_prep(STR_COL)
+        self.OBJECTIVE_COL = "error"
+        self.LABELS_COLUMN = "stroke"
+
+    def __getitem__(self, index: Tensor | list[int] | int):
+        return self.data[index], self.labels[index]
+
+    def __len__(self):
+        return len(self.data)
+
+    def clean_df(self, df: pd.DataFrame):
+
+        if self.OBJECTIVE_COL not in self.original_df.columns:
+            raise ValueError("SEM COLUNA OBJETIVO")
+        # validate schema
+        self.dataframe = MySchema.validate(df)
+        self.original_df = MySchema.validate(df)
+
+    def data_prep(self, bad_columns: list) -> None:
+        """
+        Optimized for Random Forest: Handles categorical encoding
+        without unnecessary scaling.
+        """
+        # 1. Convert categorical columns to numeric codes
+        # We use OrdinalEncoder or .cat.codes as RF handles integers well
+        for col in bad_columns:
+            self.dataframe[col] = self.dataframe[col].astype("category")
+            self.dataframe[f"{col}_code"] = self.dataframe[col].cat.codes
+
+        # 2. Extract Labels before dropping columns
+        # Ensure labels are numeric (LabelEncode them if they are strings)
+        self.labels = np.asarray(
+            self.dataframe[self.OBJECTIVE_COL].values, dtype=np.float64
+        )
+
+        # 3. Clean up the dataframe
+        # Drop original string columns and the objective column
+        drop_list = bad_columns + [self.OBJECTIVE_COL]
+        # Note: Adding a check to avoid errors if LABELS_COLUMN is already in drop_list
+        if (
+            hasattr(self, "LABELS_COLUMN")
+            and self.LABELS_COLUMN in self.dataframe.columns
+        ):
+            drop_list.append(self.LABELS_COLUMN)
+
+        self.dataframe = self.dataframe.drop(columns=drop_list)
+
+        # 4. Prepare final data
+        # For RF, we usually keep it as a NumPy array or Pandas DataFrame
+        self.data = self.dataframe.values
+
+        print("\n")
+        print(f"RANDOM FOREST READY DATASET:\n{self.dataframe.head()}\n")

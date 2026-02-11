@@ -5,9 +5,7 @@ from torch import optim
 import torch.nn as nn
 import torch
 from sklearn.metrics import precision_recall_fscore_support
-import numpy as np
 from kan import KAN
-from DataProcesser.dataset import StrokeDataset
 from Models.interface import ClassificationModel
 from Models.utils import analyse_test, calc_metrics
 
