@@ -1,24 +1,81 @@
 ##codigo dos modelos
+from enum import Enum
+from typing import Any, Dict
+
+import optuna
 import pandas as pd
-from torch import optim
-import torch.nn as nn
+from pydantic import ConfigDict
 import torch
-from Models.interface import ClassificationModel
-from Models.utils import calc_metrics, analyse_test
+import torch.nn as nn
+from torch import optim
+
+from Models.interface import ClassificationModel, HyperParameterModel
+from Models.utils import analyse_test, calc_metrics
+
+
+class MLPSearchSpace(HyperParameterModel):
+    """
+    Search Space definition for KAN Model: Contains the Keys, Boundaries, and Logic.
+    """
+
+    model_config = ConfigDict(use_enum_values=True, arbitrary_types_allowed=True)
+
+    # Internal Enumerator
+    class Keys(str, Enum):
+        LR = "lr"
+        BETA0 = "beta0"
+        BETA1 = "beta1"
+        WEIGHT_DECAY = "weight_decay"
+        BATCH_SIZE = "batch_size"
+        HIDDEN_DIMS = "hidn_dims"
+        N_LAYERS = "n_layers"
+
+    def suggest(self, values_dict: dict[str, float | int]) -> dict[str, float | int]:
+        """
+        Function to organize hyperparameter definition
+
+        :param values_dict: dictionary with hyperparameters defined
+        :type values_dict: dict[str, float | int]
+        """
+        K = self.Keys
+        hypers = {str(K(key)): value for key, value in values_dict.items()}
+        return hypers
+
+    # 3. Suggestion Logic
+    def suggest_optuna(self, trial: optuna.Trial | None = None) -> Dict[str, Any]:
+        """
+        Maps trial suggestions to the internal Keys namespace.
+        """
+        K = self.Keys  # alias
+        assert trial is not None, "trial nulo!"
+
+        # Search Space dict
+        return {
+            K.BATCH_SIZE: trial.suggest_categorical(K.BATCH_SIZE, [8, 16, 32, 64]),
+            K.HIDDEN_DIMS: trial.suggest_int(K.HIDDEN_DIMS, 16, 256, step=16),
+            K.LR: trial.suggest_float(K.LR, 1e-5, 1e-2, log=True),
+            K.WEIGHT_DECAY: trial.suggest_float(K.WEIGHT_DECAY, 1e-7, 1e-2, log=True),
+            K.BETA0: trial.suggest_float(K.BETA0, 0.900, 0.9999),
+            K.BETA1: trial.suggest_float(K.BETA1, 0.900, 0.9999),
+            K.N_LAYERS: trial.suggest_int(K.N_LAYERS, 4, 12),
+        }
 
 
 class MLP(ClassificationModel):
     def __init__(
         self,
         input_dim: int,
-        hidden_dims: int,
-        n_layers: int,
         num_classes: int,
         **kwargs,
     ):
-        self.hyperparams: dict[str, float | int] = kwargs.get("hyperparameters", {})
-
         super().__init__()
+        # Accessing hyperparameters using the Enum keys
+        self.search_space = MLPSearchSpace().Keys
+        self.hyperparams = kwargs.get("hyperparameters", {})
+
+        hidden_dims = self.hyperparams.get(self.search_space.HIDDEN_DIMS)
+        n_layers = self.hyperparams.get(self.search_space.N_LAYERS)
+
         self.model = nn.Sequential(
             nn.Linear(input_dim, hidden_dims, dtype=torch.float32),
             nn.ReLU(),
@@ -68,14 +125,12 @@ class MLP(ClassificationModel):
         return loss
 
     def configure_optimizers(self):
-        lr = self.hyperparams.get("lr", 1e-5)
-        beta0 = self.hyperparams.get("beta0", 0.99)
-        beta1 = self.hyperparams.get("beat1", 0.9999)
-        weight_decay = self.hyperparams.get("weight_decay", 1e-5)
-        optimizer = optim.Adam(
-            self.parameters(), lr=lr, betas=(beta0, beta1), weight_decay=weight_decay
-        )
-        return optimizer
+        lr = self.hyperparams.get(self.search_space.LR, 1e-3)
+        b0 = self.hyperparams.get(self.search_space.BETA0, 0.9)
+        b1 = self.hyperparams.get(self.search_space.BETA1, 0.999)
+        wd = self.hyperparams.get(self.search_space.WEIGHT_DECAY, 1e-5)
+
+        return optim.Adam(self.parameters(), lr=lr, betas=(b0, b1), weight_decay=wd)
 
     def forward(self, x) -> torch.Tensor:
         return self.model(x)

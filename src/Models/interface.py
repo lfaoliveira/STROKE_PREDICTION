@@ -1,4 +1,5 @@
 from lightning import LightningModule
+from pydantic import BaseModel
 
 
 class ClassificationModel(LightningModule):
@@ -16,3 +17,7 @@ class ClassificationModel(LightningModule):
 
     def test_step(self, batch, batch_idx, output_df, test_dataset):
         raise NotImplementedError("forward must be implemented")
+
+
+class HyperParameterModel(BaseModel):
+    pass
