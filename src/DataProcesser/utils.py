@@ -125,11 +125,22 @@ def final_analysis(
                 f"metrics.{sort_metric}", ascending=ascending
             ).iloc[0]
 
-            test_df_path = os.environ["TEST_DF_PATH"]
+            # Get artifacts from the run and search for test_results_{run_id}.csv
+            artifacts = client.list_artifacts(best_run.run_id)
+            test_results_file = f"test_results_{best_run.run_id}.csv"
+            artifact_found = any(
+                artifact.path == test_results_file for artifact in artifacts
+            )
+
+            if not artifact_found:
+                print(
+                    f"Artifact '{test_results_file}' not found in run {best_run.run_id}"
+                )
+                raise Exception("ARTIFACT NOT FOUND!")
 
             # Pass the loaded model to your analysis function
             df_path = mlflow.artifacts.download_artifacts(
-                artifact_path=test_df_path, run_id=best_run.run_id
+                artifact_path=test_results_file, run_id=best_run.run_id
             )
             prediction_df = pd.read_csv(df_path)
             residual_analysis(choice, prediction_df, processer)
