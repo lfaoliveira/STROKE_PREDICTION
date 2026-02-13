@@ -78,7 +78,7 @@ class MyKan(ClassificationModel):
 
         # Define KAN width (typically much thinner than MLP)
         # Using logic of hidden_dims // 16 for a thin KAN, to mantain model capacity equivalence
-        kan_width = self.hyperparams.get(self.search_space.HIDDEN_DIMS)
+        kan_width = int(self.hyperparams.get(self.search_space.HIDDEN_DIMS, 24))
         width_arr = [input_dim, kan_width, num_classes]
         spline_order = int(self.hyperparams.get(self.search_space.SPLINE_POL_ORDER, 3))
         grid = int(self.hyperparams.get(self.search_space.GRID, 12))
