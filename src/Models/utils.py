@@ -1,29 +1,38 @@
 import numpy as np
 import pandas as pd
-from sklearn.metrics import precision_recall_fscore_support, roc_auc_score
 import torch
+# from torchmetrics.classification import (
+#     MulticlassAUROC,
+#     MulticlassFBetaScore,
+#     MulticlassPrecision,
+#     MulticlassRecall,
+# )
 
 
-def calc_metrics(
-    labels: torch.Tensor, logits: torch.Tensor, recall_factor: float = 1.8
-):
-    prec, rec, f_beta, support = precision_recall_fscore_support(
-        labels.numpy(force=True),
-        torch.argmax(logits, dim=1).numpy(force=True),
-        zero_division=0,
-        beta=recall_factor,
-    )
+# def calc_metrics(
+#     labels: torch.Tensor, logits: torch.Tensor, recall_factor: float = 1.8
+# ) -> Tuple[float, float, float, float]:
+#     num_classes = logits.shape[1]
+#     device = logits.device
 
-    prec = np.mean(prec) if isinstance(prec, np.ndarray) else float(prec)
-    rec = np.mean(rec) if isinstance(rec, np.ndarray) else float(rec)
-    f_beta = np.mean(f_beta) if isinstance(f_beta, np.ndarray) else float(f_beta)
+#     # Initialize metrics
+#     precision_metric = MulticlassPrecision(num_classes=num_classes, average="macro").to(
+#         device
+#     )
+#     recall_metric = MulticlassRecall(num_classes=num_classes, average="macro").to(
+#         device
+#     )
+#     fbeta_metric = MulticlassFBetaScore(
+#         num_classes=num_classes, beta=recall_factor, average="macro"
+#     ).to(device)
 
-    # NOTE: disabling ROC for now (need to adapt to binary classes)
-    # probabilities = torch.softmax(logits, dim=1).numpy(force=True)
-    # roc_auc = roc_auc_score(labels.numpy(force=True), probabilities[:, 1])
-    roc_auc = 0
+#     # Update and compute
+#     prec = precision_metric(logits, labels)
+#     rec = recall_metric(logits, labels)
+#     f_beta = fbeta_metric(logits, labels)
 
-    return f_beta, prec, rec, roc_auc
+
+#     return float(f_beta), float(prec), float(rec), float(roc_auc)
 
 
 def analyse_test(

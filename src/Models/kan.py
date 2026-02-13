@@ -3,13 +3,10 @@ from typing import Any, Dict
 
 import optuna
 import torch
-import torch.nn as nn
 from kan import KAN
 from pydantic import ConfigDict
-from torch import optim
 
-from Models.interface import ClassificationModel, HyperParameterModel
-from Models.utils import analyse_test, calc_metrics
+from Models.abc import ClassificationModel, HyperParameterModel
 
 
 class KANSearchSpace(HyperParameterModel):
@@ -72,7 +69,7 @@ class MyKan(ClassificationModel):
         recall_factor: float,
         **kwargs: Any,
     ):
-        super().__init__()
+        super().__init__(input_dim, num_classes, recall_factor)
         # Accessing hyperparameters using the Enum keys
         self.search_space = KANSearchSpace().Keys
         self.hyperparams = kwargs.get("hyperparameters", {})
@@ -98,43 +95,3 @@ class MyKan(ClassificationModel):
 
         # Log the calculated capacity for MLflow/Tensorboard
         self.save_hyperparameters()
-
-    def forward(self, x) -> torch.Tensor:
-        return self.model(x)
-
-    def training_step(self, batch: tuple[torch.Tensor, torch.Tensor], batch_idx: int):
-        data, labels = batch
-        logits = self.forward(data)
-        labels = torch.squeeze(labels.long())
-        loss = nn.functional.cross_entropy(logits, labels)
-        self.log("train_loss", loss, prog_bar=True)
-        return loss
-
-    def validation_step(self, batch: tuple[torch.Tensor, torch.Tensor], batch_idx: int):
-        data, labels = batch
-        logits = self.forward(data)
-        labels = torch.squeeze(labels.long())
-        loss = nn.functional.cross_entropy(logits, labels)
-
-        f_beta, prec, rec, roc_auc = calc_metrics(labels, logits, self.recall_factor)
-
-        self.log("val_loss", loss, prog_bar=True, on_epoch=True)
-        self.log("val_prec", float(prec), prog_bar=False, on_epoch=True)
-        self.log("val_rec", float(rec), prog_bar=False, on_epoch=True)
-        self.log("val_f_beta", float(f_beta), prog_bar=False, on_epoch=True)
-        self.log("val_roc_auc", float(roc_auc), prog_bar=False, on_epoch=True)
-        return loss
-
-    def configure_optimizers(self):
-        # Using the Enum for safe access
-        lr = self.hyperparams.get(self.search_space.LR, 1e-3)
-        b0 = self.hyperparams.get(self.search_space.BETA0, 0.9)
-        b1 = self.hyperparams.get(self.search_space.BETA1, 0.999)
-        wd = self.hyperparams.get(self.search_space.WEIGHT_DECAY, 1e-5)
-
-        return optim.Adam(self.parameters(), lr=lr, betas=(b0, b1), weight_decay=wd)
-
-    def test_step(self, batch, batch_idx, output_df, test_dataset):
-        # We pass self.model to ensure we are testing the KAN architecture
-        analyse_test(self.model, batch, batch_idx, output_df, test_dataset)
-        return output_df
