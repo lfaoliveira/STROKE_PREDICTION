@@ -4,12 +4,14 @@ from sklearn.metrics import precision_recall_fscore_support, roc_auc_score
 import torch
 
 
-def calc_metrics(labels: torch.Tensor, logits: torch.Tensor):
+def calc_metrics(
+    labels: torch.Tensor, logits: torch.Tensor, recall_factor: float = 1.8
+):
     prec, rec, f_beta, support = precision_recall_fscore_support(
         labels.numpy(force=True),
         torch.argmax(logits, dim=1).numpy(force=True),
         zero_division=0,
-        beta=1.5,
+        beta=recall_factor,
     )
 
     prec = np.mean(prec) if isinstance(prec, np.ndarray) else float(prec)

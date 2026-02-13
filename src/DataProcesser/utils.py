@@ -3,6 +3,7 @@ from typing import Any, Literal
 import mlflow
 import pandas as pd
 
+from view.final import plot_classification_errors
 from view.graph import plot_all_runs_per_model, plot_single_run
 from pipelines.result_processer import ResultsProcesser
 from Models.error_model import ErrorModel
@@ -51,6 +52,7 @@ def residual_analysis(
     best_run: Any,
     name: str,
     processer: ResultsProcesser,
+    plot=False,  # wether to plot agreggate confusion matrix results
 ):
     # Get artifacts from the run and search for test_results_{run_id}.csv
     artifacts = client.list_artifacts(best_run.run_id)
@@ -67,7 +69,8 @@ def residual_analysis(
         artifact_path=test_results_file, run_id=best_run.run_id
     )
 
-    prediction_df = pd.read_csv(df_path)
+    prediction_df = pd.read_csv(df_path).dropna(how="any")
+    plot_classification_errors(prediction_df, "stroke", "pred")
     error_model = ErrorModel(prediction_df)
     processer.update(name, error_model, prediction_df)
 
@@ -128,12 +131,7 @@ def final_analysis(
             best_run = runs.sort_values(
                 f"metrics.{sort_metric}", ascending=ascending
             ).iloc[0]
-            residual_analysis(
-                client,
-                best_run,
-                choice,
-                processer,
-            )
+            residual_analysis(client, best_run, choice, processer, plot=True)
 
         # Always plot combined view
         if all_runs_metrics_dict:

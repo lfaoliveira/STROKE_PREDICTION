@@ -174,7 +174,8 @@ class ErrorModelDataset(Dataset):
             hasattr(self, "LABELS_COLUMN")
             and self.LABELS_COLUMN in self.dataframe.columns
         ):
-            drop_list.append(self.LABELS_COLUMN)
+            # drop_list.append(self.LABELS_COLUMN)
+            pass
 
         self.dataframe = self.dataframe.drop(columns=drop_list)
 

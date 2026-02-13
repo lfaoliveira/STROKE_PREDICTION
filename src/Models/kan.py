@@ -69,12 +69,15 @@ class MyKan(ClassificationModel):
         self,
         input_dim: int,
         num_classes: int,
+        recall_factor: float,
         **kwargs: Any,
     ):
         super().__init__()
         # Accessing hyperparameters using the Enum keys
         self.search_space = KANSearchSpace().Keys
         self.hyperparams = kwargs.get("hyperparameters", {})
+
+        self.recall_factor = recall_factor
 
         # Define KAN width (typically much thinner than MLP)
         # Using logic of hidden_dims // 16 for a thin KAN, to mantain model capacity equivalence
@@ -113,7 +116,7 @@ class MyKan(ClassificationModel):
         labels = torch.squeeze(labels.long())
         loss = nn.functional.cross_entropy(logits, labels)
 
-        f_beta, prec, rec, roc_auc = calc_metrics(labels, logits)
+        f_beta, prec, rec, roc_auc = calc_metrics(labels, logits, self.recall_factor)
 
         self.log("val_loss", loss, prog_bar=True)
         self.log("val_prec", float(prec), prog_bar=False)

@@ -66,12 +66,15 @@ class MLP(ClassificationModel):
         self,
         input_dim: int,
         num_classes: int,
+        recall_factor: float,
         **kwargs,
     ):
         super().__init__()
         # Accessing hyperparameters using the Enum keys
         self.search_space = MLPSearchSpace().Keys
         self.hyperparams = kwargs.get("hyperparameters", {})
+
+        self.recall_factor = recall_factor
 
         hidden_dims = self.hyperparams.get(self.search_space.HIDDEN_DIMS)
         n_layers = self.hyperparams.get(self.search_space.N_LAYERS)
@@ -115,7 +118,7 @@ class MLP(ClassificationModel):
 
         loss = nn.functional.cross_entropy(logits, labels)
 
-        f_beta, prec, rec, roc_auc = calc_metrics(labels, logits)
+        f_beta, prec, rec, roc_auc = calc_metrics(labels, logits, self.recall_factor)
 
         self.log("val_loss", loss, prog_bar=False)
         self.log("val_prec", float(prec), prog_bar=False)
