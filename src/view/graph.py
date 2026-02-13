@@ -1,10 +1,22 @@
 from pathlib import Path
 from matplotlib import pyplot as plt
-import mlflow
-import pandas as pd
 import matplotlib.cm as cm
 import numpy as np
 
+
+def filter_metrics(
+    metrics_dict: dict[str, dict[int, float]],
+) -> tuple[list[str], list[str]]:
+    """Filter metrics into loss and eval categories."""
+    loss_metrics = [m for m in metrics_dict.keys() if "loss" in m.lower()]
+
+    def is_eval_metric(name: str):
+        return any(
+            suffix in name.lower() for suffix in ["f_beta", "prec", "rec", "auc"]
+        )
+
+    eval_metrics = [m for m in metrics_dict.keys() if is_eval_metric(m)]
+    return loss_metrics, eval_metrics
 
 
 # Plotting Functions
@@ -118,8 +130,3 @@ def plot_all_runs_per_model(
     plt.savefig(output_file, dpi=300, bbox_inches="tight")
     print(f"Saved all runs comparison plot: {output_file}")
     plt.close()
-
-
-# Main Pipeline
-def train_metrics(models: list, output_dir: Path, residual_analysis=True) -> pd.DataFrame:
-    pass

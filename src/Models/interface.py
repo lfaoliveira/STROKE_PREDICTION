@@ -19,5 +19,6 @@ class ClassificationModel(LightningModule):
         raise NotImplementedError("forward must be implemented")
 
 
+# classe comum para todos os definidores de hyperparametros
 class HyperParameterModel(BaseModel):
     pass

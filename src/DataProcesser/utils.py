@@ -1,10 +1,10 @@
 from pathlib import Path
-from typing import Literal
+from typing import Any, Literal
 import mlflow
 import pandas as pd
 
-from DataProcesser.graph import plot_all_runs_per_model, plot_single_run
-from DataProcesser.result_processer import ResultsProcesser
+from view.graph import plot_all_runs_per_model, plot_single_run
+from pipelines.result_processer import ResultsProcesser
 from Models.error_model import ErrorModel
 
 
@@ -34,21 +34,6 @@ def _grab_values(
     return metrics_dict
 
 
-def filter_metrics(
-    metrics_dict: dict[str, dict[int, float]],
-) -> tuple[list[str], list[str]]:
-    """Filter metrics into loss and eval categories."""
-    loss_metrics = [m for m in metrics_dict.keys() if "loss" in m.lower()]
-
-    def is_eval_metric(name: str):
-        return any(
-            suffix in name.lower() for suffix in ["f_beta", "prec", "rec", "auc"]
-        )
-
-    eval_metrics = [m for m in metrics_dict.keys() if is_eval_metric(m)]
-    return loss_metrics, eval_metrics
-
-
 def _calculate_metric_averages(
     metrics_dict: dict[str, dict[int, float]],
 ) -> dict[str, float]:
@@ -62,8 +47,27 @@ def _calculate_metric_averages(
 
 
 def residual_analysis(
-    name: str, prediction_df: pd.DataFrame, processer: ResultsProcesser
+    client: mlflow.MlflowClient,
+    best_run: Any,
+    name: str,
+    processer: ResultsProcesser,
 ):
+    # Get artifacts from the run and search for test_results_{run_id}.csv
+    artifacts = client.list_artifacts(best_run.run_id)
+    print(f"ARTIFACT LIST: {artifacts}")
+    test_results_file = f"test_results_{best_run.run_id}.csv"
+    artifact_found = any(artifact.path == test_results_file for artifact in artifacts)
+
+    if not artifact_found:
+        print(f"Artifact '{test_results_file}' not found in run {best_run.run_id}")
+        raise Exception("ARTIFACT NOT FOUND!")
+
+    # Pass the loaded model to your analysis function
+    df_path = mlflow.artifacts.download_artifacts(
+        artifact_path=test_results_file, run_id=best_run.run_id
+    )
+
+    prediction_df = pd.read_csv(df_path)
     error_model = ErrorModel(prediction_df)
     processer.update(name, error_model, prediction_df)
 
@@ -124,27 +128,12 @@ def final_analysis(
             best_run = runs.sort_values(
                 f"metrics.{sort_metric}", ascending=ascending
             ).iloc[0]
-
-            # Get artifacts from the run and search for test_results_{run_id}.csv
-            artifacts = client.list_artifacts(best_run.run_id)
-            print(f"ARTIFACT LIST: {artifacts}")
-            test_results_file = f"test_results_{best_run.run_id}.csv"
-            artifact_found = any(
-                artifact.path == test_results_file for artifact in artifacts
+            residual_analysis(
+                client,
+                best_run,
+                choice,
+                processer,
             )
-
-            if not artifact_found:
-                print(
-                    f"Artifact '{test_results_file}' not found in run {best_run.run_id}"
-                )
-                raise Exception("ARTIFACT NOT FOUND!")
-
-            # Pass the loaded model to your analysis function
-            df_path = mlflow.artifacts.download_artifacts(
-                artifact_path=test_results_file, run_id=best_run.run_id
-            )
-            prediction_df = pd.read_csv(df_path)
-            residual_analysis(choice, prediction_df, processer)
 
         # Always plot combined view
         if all_runs_metrics_dict:
