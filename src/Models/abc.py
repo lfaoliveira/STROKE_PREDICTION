@@ -105,7 +105,7 @@ class ClassificationModel(LightningModule):
         One-pass test step that updates metrics and analysis DataFrame.
         """
         output_df, logits, labels = analyse_test(self.model, test_dataset, output_df)
-        print(logits, "\n\n", labels)
+        # print(logits, "\n\n", labels)
         # Store data into test_metrics (accumulate results)
         self.test_metrics.update(logits, labels)
 
