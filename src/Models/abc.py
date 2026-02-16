@@ -84,7 +84,7 @@ class ClassificationModel(LightningModule):
         labels = torch.squeeze(labels.long())
         loss = nn.functional.cross_entropy(logits, labels, weight=self.class_weight)
 
-        self.log("train_loss", loss, prog_bar=True, on_epoch=True)
+        self.log("train_loss", loss, prog_bar=True, on_step=False, on_epoch=True)
         return loss
 
     def validation_step(
