@@ -28,6 +28,9 @@ class HyperParameterModel(BaseModel):
 
 
 class ClassificationModel(LightningModule):
+    # weight for each class in loss
+    class_weight: torch.Tensor
+
     def __init__(
         self, input_dim: int, num_classes: int, recall_factor: float, **kwargs: Any
     ) -> None:
@@ -37,8 +40,9 @@ class ClassificationModel(LightningModule):
         self.search_space: Any = None
         self.model: nn.Module = nn.Identity()
 
-        self.class_weight = torch.asarray(
-            [1.0, recall_factor], dtype=torch.float32, device=self.device
+        self.register_buffer(
+            "class_weight",
+            torch.tensor([1.0, recall_factor], dtype=torch.float32),
         )
 
         # NOTE: when working outside of lightning, MetricCollection needs a manual reset()
