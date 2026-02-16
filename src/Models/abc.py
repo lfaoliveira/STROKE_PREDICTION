@@ -37,12 +37,14 @@ class ClassificationModel(LightningModule):
         self.search_space: Any = None
         self.model: nn.Module = nn.Identity()
 
+        self.class_weight = torch.asarray([1.0, recall_factor], dtype=torch.float32)
+
         # NOTE: when working outside of lightning, MetricCollection needs a manual reset()
 
         self.val_metrics = MetricCollection(
             {
                 "val_f_beta": MulticlassFBetaScore(
-                    num_classes=num_classes, beta=recall_factor, average="macro"
+                    num_classes=num_classes, beta=1.0, average="macro"
                 ),
                 "val_prec": MulticlassPrecision(
                     num_classes=num_classes, average="macro"
@@ -54,7 +56,7 @@ class ClassificationModel(LightningModule):
         self.test_metrics = MetricCollection(
             {
                 "f_beta": MulticlassFBetaScore(
-                    num_classes=num_classes, beta=recall_factor, average="macro"
+                    num_classes=num_classes, beta=1.0, average="macro"
                 ),
                 "prec": MulticlassPrecision(num_classes=num_classes, average="macro"),
                 "rec": MulticlassRecall(num_classes=num_classes, average="macro"),
@@ -74,7 +76,7 @@ class ClassificationModel(LightningModule):
         data, labels = batch
         logits = self.forward(data)
         labels = torch.squeeze(labels.long())
-        loss = nn.functional.cross_entropy(logits, labels)
+        loss = nn.functional.cross_entropy(logits, labels, weight=self.class_weight)
 
         self.log("train_loss", loss, prog_bar=True, on_epoch=True)
         return loss
@@ -85,7 +87,7 @@ class ClassificationModel(LightningModule):
         data, labels = batch
         logits = self.forward(data)
         labels = torch.squeeze(labels.long())
-        loss = nn.functional.cross_entropy(logits, labels)
+        loss = nn.functional.cross_entropy(logits, labels, weight=self.class_weight)
         preds = logits.argmax(dim=-1)
         self.val_metrics.update(preds, labels)
 
