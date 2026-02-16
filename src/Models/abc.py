@@ -37,7 +37,9 @@ class ClassificationModel(LightningModule):
         self.search_space: Any = None
         self.model: nn.Module = nn.Identity()
 
-        self.class_weight = torch.asarray([1.0, recall_factor], dtype=torch.float32)
+        self.class_weight = torch.asarray(
+            [1.0, recall_factor], dtype=torch.float32, device=self.device
+        )
 
         # NOTE: when working outside of lightning, MetricCollection needs a manual reset()
 
