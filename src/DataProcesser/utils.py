@@ -1,13 +1,16 @@
 from pathlib import Path
 from typing import Any, Literal
 import mlflow
+import numpy as np
 import pandas as pd
 
 from view.final import plot_classification_errors
 from view.graph import plot_all_runs_per_model, plot_single_run
 from pipelines.result_processer import ResultsProcesser
 from Models.error_model import ErrorModel
+from mlflow.artifacts import download_artifacts
 import os
+
 
 # Data Processing Functions
 def _grab_values(
@@ -30,7 +33,10 @@ def _grab_values(
         metric_history = sorted(metric_history, key=lambda m: m.step)
 
         if metric_history:
-            metrics_dict[metric_name] = {m.step: m.value for m in metric_history}
+            # Indexed by epoch number (sequence index) instead of mlflow step
+            metrics_dict[metric_name] = {
+                epoch: m.value for epoch, m in enumerate(metric_history)
+            }
 
     return metrics_dict
 
@@ -39,15 +45,14 @@ def _calculate_metric_averages(
     metrics_dict: dict[str, dict[int, float]],
 ) -> dict[str, float]:
     """Calculate average values for all metrics."""
-    averages = {}
+    averages: dict[str, float] = {}
 
-    for metric_name, steps_values in metrics_dict.items():
-        values = list(steps_values.values())
+    for metric_name, epochs_values in metrics_dict.items():
+        values = list(epochs_values.values())
         if values:
-            averages[f"{metric_name}_avg"] = sum(values) / len(values)
+            averages[f"{metric_name}_avg"] = float(np.average(values))
     return averages
 
-    
 
 def residual_analysis(
     client: mlflow.MlflowClient,
@@ -66,7 +71,7 @@ def residual_analysis(
         raise Exception("ARTIFACT NOT FOUND!")
 
     # Pass the loaded model to your analysis function
-    df_path = mlflow.artifacts.download_artifacts(
+    df_path = download_artifacts(
         artifact_path=test_results_file, run_id=best_run.run_id
     )
 
@@ -76,10 +81,12 @@ def residual_analysis(
     error_model = ErrorModel(prediction_df)
     processer.update(name, error_model, prediction_df)
 
+
 def metric_filter(metric_name: str, not_list: list[str]):
     """Returns true if any unallowed string is in metric_name"""
-    allowed = all([(unallowed not in metric_name ) for unallowed in not_list])
+    allowed = all([(unallowed not in metric_name) for unallowed in not_list])
     return allowed
+
 
 def final_analysis(
     models: list,
@@ -89,13 +96,11 @@ def final_analysis(
     residual=True,
 ) -> tuple[pd.DataFrame, ResultsProcesser]:
     """Generate metrics and plots for trained models. residual indicates wether to store basic residual analysis information for later use"""
-    
 
     is_optuna = bool(os.environ.get("OPTUNA", False))
     all_models_metrics = []
     output_dir.mkdir(exist_ok=True)
     client = mlflow.MlflowClient()
-    
 
     processer = ResultsProcesser()
 
@@ -117,7 +122,12 @@ def final_analysis(
         for idx, run_id in enumerate(runs["run_id"]):
             run = client.get_run(run_id)
             available_metrics = list(run.data.metrics.keys())
-            available_metrics= list(filter(lambda elem: metric_filter(elem, unwanted_metrics), available_metrics))
+            available_metrics = list(
+                filter(
+                    lambda elem: metric_filter(elem, unwanted_metrics),
+                    available_metrics,
+                )
+            )
             # Collect metrics
             run_metrics_dict = _grab_values(available_metrics, client, run_id)
             all_runs_metrics_dict[run_id] = run_metrics_dict
@@ -134,7 +144,7 @@ def final_analysis(
             if not is_optuna and run_metrics_dict:
                 plot_single_run(run_metrics_dict, choice, str(idx), output_dir)
 
-        # armazena modelos de erro e dataframe
+        # stores residual model and dataframe
         if residual and not runs.empty:
             ascending = "loss" in sort_metric
             best_run = runs.sort_values(
@@ -143,7 +153,7 @@ def final_analysis(
             residual_analysis(client, best_run, choice, processer, plot=True)
 
         # Always plot combined view
-        if all_runs_metrics_dict:
+        if is_optuna and all_runs_metrics_dict:
             plot_all_runs_per_model(all_runs_metrics_dict, choice, output_dir)
 
         all_models_metrics.append(model_metrics)

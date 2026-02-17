@@ -34,25 +34,25 @@ def plot_single_run(
 
     fig, axes = plt.subplots(2, 1, figsize=(10, 8))
 
-    # Plot loss metrics
+    # Plot loss metrics NOTE: removes epoch 0 for better visualization
     for metric_name in loss_metrics:
-        steps = list(metrics_dict[metric_name].keys())
+        epochs = list(metrics_dict[metric_name].keys())
         values = list(metrics_dict[metric_name].values())
-        axes[0].plot(steps, values, marker="o", label=metric_name)
+        axes[0].plot(epochs, values, marker="o", label=metric_name)
 
     # Plot eval metrics
     for metric_name in eval_metrics:
-        steps = list(metrics_dict[metric_name].keys())
+        epochs = list(metrics_dict[metric_name].keys())
         values = list(metrics_dict[metric_name].values())
-        axes[1].plot(steps, values, marker="o", label=metric_name)
+        axes[1].plot(epochs, values, marker="o", label=metric_name)
 
-    axes[0].set_xlabel("Step")
+    axes[0].set_xlabel("Epoch")
     axes[0].set_ylabel("Loss")
     axes[0].set_title("Training and Validation Loss")
     axes[0].legend()
     axes[0].grid(True)
 
-    axes[1].set_xlabel("Step")
+    axes[1].set_xlabel("Epoch")
     axes[1].set_ylabel("Metric Value")
     axes[1].set_title("Training and Validation Metrics")
     axes[1].legend()
@@ -61,6 +61,7 @@ def plot_single_run(
     plt.tight_layout()
     plt.subplots_adjust(top=0.90)
     plt.suptitle(f"{choice} Experiment", y=0.98)
+    run_idx = "" if run_idx == 0 else run_idx
     plt.savefig(output_dir / f"metrics_{choice}_run_{run_idx}.png", dpi=300)
     plt.close()
 
