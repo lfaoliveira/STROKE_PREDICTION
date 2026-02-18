@@ -34,17 +34,33 @@ def plot_single_run(
 
     fig, axes = plt.subplots(2, 1, figsize=(10, 8))
 
-    # Plot loss metrics NOTE: removes epoch 0 for better visualization
+    # Plot loss metrics
+    all_loss_values = []
     for metric_name in loss_metrics:
         epochs = list(metrics_dict[metric_name].keys())
         values = list(metrics_dict[metric_name].values())
         axes[0].plot(epochs, values, marker="o", label=metric_name)
+        all_loss_values.extend(values)
+
+    if all_loss_values:
+        axes[0].set_ylim(
+            np.percentile(all_loss_values, 5),
+            np.percentile(all_loss_values, 95),
+        )
 
     # Plot eval metrics
+    all_eval_values = []
     for metric_name in eval_metrics:
         epochs = list(metrics_dict[metric_name].keys())
         values = list(metrics_dict[metric_name].values())
         axes[1].plot(epochs, values, marker="o", label=metric_name)
+        all_eval_values.extend(values)
+
+    if all_eval_values:
+        axes[1].set_ylim(
+            np.percentile(all_eval_values, 5),
+            np.percentile(all_eval_values, 95),
+        )
 
     axes[0].set_xlabel("Epoch")
     axes[0].set_ylabel("Loss")
