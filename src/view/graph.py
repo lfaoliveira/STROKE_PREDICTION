@@ -63,6 +63,7 @@ def plot_single_run(
     plt.suptitle(f"{choice} Experiment", y=0.98)
     run_idx = "" if run_idx == 0 else run_idx
     plt.savefig(output_dir / f"metrics_{choice}_run_{run_idx}.png", dpi=300)
+    plt.show()
     plt.close()
 
 
@@ -130,4 +131,5 @@ def plot_all_runs_per_model(
     output_file = output_dir / f"all_runs_comparison_{choice}.png"
     plt.savefig(output_file, dpi=300, bbox_inches="tight")
     print(f"Saved all runs comparison plot: {output_file}")
+    plt.show()
     plt.close()
