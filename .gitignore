@@ -211,6 +211,7 @@ __marimo__/
 
 mlruns
 mlflow.db
+optuna.db
 stroke.csv
 **resultado**
 .install_complete

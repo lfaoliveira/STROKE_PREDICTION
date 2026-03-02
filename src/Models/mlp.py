@@ -53,7 +53,7 @@ class MLPSearchSpace(HyperParameterModel):
             K.WEIGHT_DECAY: trial.suggest_float(K.WEIGHT_DECAY, 1e-7, 1e-2, log=True),
             K.BETA0: trial.suggest_float(K.BETA0, 0.900, 0.9999),
             K.BETA1: trial.suggest_float(K.BETA1, 0.900, 0.9999),
-            K.N_LAYERS: trial.suggest_int(K.N_LAYERS, 40, 80),
+            K.N_LAYERS: trial.suggest_int(K.N_LAYERS, 40, 100),
         }
 
 
@@ -70,9 +70,19 @@ class MLP(ClassificationModel):
         self.search_space = MLPSearchSpace().Keys
         self.hyperparams = kwargs.get("hyperparameters", {})
 
+        key = self.search_space.HIDDEN_DIMS.value
+        print(f"KEY: {key}")
+        print(f"HYPER: {self.hyperparams.keys()}")
+        hidden_dims = int(self.hyperparams.get(key, -1))
 
-        hidden_dims = int(self.hyperparams.get(self.search_space.HIDDEN_DIMS, 256))
-        n_layers = int(self.hyperparams.get(self.search_space.N_LAYERS, 4))
+        key = self.search_space.N_LAYERS.value
+        n_layers = int(self.hyperparams.get(key, -1))
+
+        assert hidden_dims > 0, "ERROR AT MODEL PARAMETERS: hidden_dims must be > 0!"
+        assert int(n_layers) > 0, "ERROR AT MODEL PARAMETERS: n_layers must be > 0!"
+        assert int(num_classes) > 0, (
+            "ERROR AT MODEL PARAMETERS: num_classes must be > 0!"
+        )
 
         self.model = nn.Sequential(
             nn.Linear(input_dim, hidden_dims, dtype=torch.float32),

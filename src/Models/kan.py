@@ -49,8 +49,8 @@ class KANSearchSpace(HyperParameterModel):
         # Search Space dict
         return {
             K.BATCH_SIZE: trial.suggest_categorical(K.BATCH_SIZE, [8, 16, 32, 64]),
-            K.HIDDEN_DIMS: trial.suggest_int(K.HIDDEN_DIMS, 32, 92, step=2),
-            K.GRID: trial.suggest_categorical(K.GRID, [34, 40, 44, 60, 64, 68, 72, 74]),
+            K.HIDDEN_DIMS: trial.suggest_int(K.HIDDEN_DIMS, 32, 100, step=2),
+            K.GRID: trial.suggest_int(K.GRID, 60, 154, step=2),
             K.SPLINE_POL_ORDER: trial.suggest_categorical(
                 K.SPLINE_POL_ORDER, [3, 4, 5, 7, 9]
             ),
@@ -76,10 +76,25 @@ class MyKan(ClassificationModel):
 
         # Define KAN width (typically much thinner than MLP)
         # Using logic of hidden_dims // 16 compared to an MLP Hidden dims, to mantain model capacity equivalence
-        kan_width = int(self.hyperparams.get(self.search_space.HIDDEN_DIMS, -1))
+        assert self.hyperparams is not None
+
+        key = self.search_space.HIDDEN_DIMS.value
+        kan_width = int(self.hyperparams.get(key, -1))
+
+        key = self.search_space.SPLINE_POL_ORDER.value
+        spline_order = int(self.hyperparams.get(key, -1))
+
+        key = self.search_space.GRID.value
+        grid = int(self.hyperparams.get(key, -1))
+
+        assert kan_width > 0, "ERROR AT MODEL PARAMETERS: kan_width must be > 0!"
+        assert int(num_classes) > 0, (
+            "ERROR AT MODEL PARAMETERS: num_classes must be > 0!"
+        )
+        assert spline_order > 0, "ERROR AT MODEL PARAMETERS: spline_order must be > 0!"
+        assert grid > 0, "ERROR AT MODEL PARAMETERS: grid must be > 0!"
+
         width_arr = [input_dim, kan_width, num_classes]
-        spline_order = int(self.hyperparams.get(self.search_space.SPLINE_POL_ORDER, -1))
-        grid = int(self.hyperparams.get(self.search_space.GRID, 12))
 
         self.model = KAN(
             width=width_arr,
