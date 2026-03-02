@@ -35,7 +35,7 @@ class KANSearchSpace(HyperParameterModel):
         :type values_dict: dict[str, float | int]
         """
         K = self.Keys
-        hypers = {str(K(key)): value for key, value in values_dict.items()}
+        hypers = {K(key).value: value for key, value in values_dict.items()}
         return hypers
 
     # 3. Suggestion Logic
