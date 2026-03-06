@@ -2,26 +2,25 @@ from typing import Any, List, Tuple
 
 import numpy as np
 import torch
-from xgboost import XGBClassifier
+from sklearn.ensemble import RandomForestClassifier
 
 from Models.abc import ClassificationModel, HyperParameterModel
 
 
-class XGBoostHyperParameters(HyperParameterModel):
-    """Hyperparameters for XGBoost model."""
+class RandomForestHyperParameters(HyperParameterModel):
+    """Hyperparameters for Random Forest model."""
 
-    max_depth: int = 6
-    learning_rate: float = 0.1
     n_estimators: int = 100
-    subsample: float = 0.8
-    colsample_bytree: float = 0.8
-    reg_alpha: float = 0.0
-    reg_lambda: float = 1.0
-    min_child_weight: int = 1
+    max_depth: int = 15
+    min_samples_split: int = 2
+    min_samples_leaf: int = 1
+    max_features: str = "sqrt"
+    bootstrap: bool = True
+    random_state: int = 42
 
 
-class XGBoostModel(ClassificationModel):
-    """XGBoost classifier wrapped in PyTorch Lightning."""
+class RandomForestModel(ClassificationModel):
+    """Random Forest classifier wrapped in PyTorch Lightning."""
 
     def __init__(
         self,
@@ -35,20 +34,17 @@ class XGBoostModel(ClassificationModel):
         self.num_classes = num_classes
         self.input_dim = input_dim
 
-        # Initialize XGBoost model
+        # Initialize Random Forest model
         hyperparams = self.hyperparams
-        self.xgb_model = XGBClassifier(  # type: ignore
-            max_depth=hyperparams.get("max_depth", 6),
-            learning_rate=hyperparams.get("learning_rate", 0.1),
+        self.rf_model = RandomForestClassifier(
             n_estimators=hyperparams.get("n_estimators", 100),
-            subsample=hyperparams.get("subsample", 0.8),
-            colsample_bytree=hyperparams.get("colsample_bytree", 0.8),
-            reg_alpha=hyperparams.get("reg_alpha", 0.0),
-            reg_lambda=hyperparams.get("reg_lambda", 1.0),
-            min_child_weight=hyperparams.get("min_child_weight", 1),
-            random_state=42,
-            num_class=num_classes,
-            objective="multi:softprob" if num_classes > 2 else "binary:logistic",
+            max_depth=hyperparams.get("max_depth", 15),
+            min_samples_split=hyperparams.get("min_samples_split", 2),
+            min_samples_leaf=hyperparams.get("min_samples_leaf", 1),
+            max_features=hyperparams.get("max_features", "sqrt"),
+            bootstrap=hyperparams.get("bootstrap", True),
+            random_state=hyperparams.get("random_state", 42),
+            n_jobs=-1,
         )
         self.is_fitted = False
 
@@ -58,23 +54,23 @@ class XGBoostModel(ClassificationModel):
             raise RuntimeError("Model must be fitted before forward pass")
 
         x_numpy = x.cpu().detach().numpy()
-        predictions = self.xgb_model.predict_proba(x_numpy)
+        predictions = self.rf_model.predict_proba(x_numpy)
         return torch.tensor(predictions, dtype=torch.float32, device=x.device)
 
     def training_step(
         self, batch: Tuple[torch.Tensor, torch.Tensor], batch_idx: int
     ) -> torch.Tensor:
-        """Training step - fit XGBoost on batch."""
+        """Training step - fit Random Forest on batch."""
         data, labels = batch
         x_numpy = data.cpu().detach().numpy()
         y_numpy = labels.cpu().detach().numpy().squeeze()
 
-        # Fit XGBoost model
-        self.xgb_model.fit(x_numpy, y_numpy)
+        # Fit Random Forest model
+        self.rf_model.fit(x_numpy, y_numpy)
         self.is_fitted = True
 
         # Calculate training loss
-        predictions = self.xgb_model.predict_proba(x_numpy)
+        predictions = self.rf_model.predict_proba(x_numpy)
         loss = self._calculate_loss(predictions, y_numpy)
 
         self.log("train_loss", loss, prog_bar=True, on_step=False, on_epoch=True)
@@ -91,7 +87,7 @@ class XGBoostModel(ClassificationModel):
         x_numpy = data.cpu().detach().numpy()
         y_numpy = labels.cpu().detach().numpy().squeeze().astype(int)
 
-        predictions = self.xgb_model.predict_proba(x_numpy)
+        predictions = self.rf_model.predict_proba(x_numpy)
         loss = self._calculate_loss(predictions, y_numpy)
 
         preds_tensor = torch.tensor(
@@ -112,3 +108,5 @@ class XGBoostModel(ClassificationModel):
             np.log(predictions[np.arange(len(labels)), labels.astype(int)])
         )
         return float(ce_loss)
+
+
