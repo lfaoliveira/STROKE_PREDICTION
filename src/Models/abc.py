@@ -27,7 +27,7 @@ class SuperKeys(str, Enum):
     """Base interface for all hyperparameter key enums."""
 
     # BATCH_SIZE = "batch_size"
-    
+
 
 # classe comum para todos os definidores de hyperparametros
 class HyperParameterModel(abc.ABC):
@@ -45,6 +45,7 @@ class HyperParameterModel(abc.ABC):
 class ClassificationModel(LightningModule):
     # weight for each class in loss
     class_weight: torch.Tensor
+    is_sklearn = False
 
     def __init__(
         self,
@@ -140,6 +141,10 @@ class ClassificationModel(LightningModule):
         return {"output_df": output_df}
 
     def configure_optimizers(self) -> torch.optim.Optimizer:
+        if self.is_sklearn:
+            return optim.AdamW(
+                self.parameters(), lr=1e-3, betas=(0.99, 0.999), weight_decay=1e-5
+            )
         # Using the Enum for safe access
         lr = self.hyperparams.get(self.search_space.LR, 1e-3)
         b0 = self.hyperparams.get(self.search_space.BETA0, 0.9)
