@@ -16,7 +16,7 @@ class MLPSearchSpace(HyperParameterModel):
     model_config = ConfigDict(use_enum_values=True, arbitrary_types_allowed=True)
 
     # Internal Enumerator
-    class Keys(SuperKeys.__class__):
+    class Keys(SuperKeys):
         LR = "lr"
         BETA0 = "beta0"
         BETA1 = "beta1"
@@ -25,7 +25,7 @@ class MLPSearchSpace(HyperParameterModel):
         HIDDEN_DIMS = "hidn_dims"
         N_LAYERS = "n_layers"
 
-    def suggest(self, values_dict: dict[Keys, float | int]) -> dict[str, float | int]:
+    def suggest(self, values_dict: dict[str, float | int]) -> dict[str, float | int]:
         """
         Function to organize hyperparameter definition
 

@@ -13,10 +13,10 @@ class ModelFactory:
     class Models(str, Enum):
         """Enum of available models."""
 
-        KAN = "MyKan"
+        KAN = "KAN"
         MLP = "MLP"
-        RANDOMFOREST = "RandomForestModel"
-        XGBOOST = "XGBoostModel"
+        RANDOMFOREST = "RANDOMFOREST"
+        XGBOOST = "XGBOOST"
 
     # Dictionary mapping enum keys to model classes
     _models: dict[Models, Type[ClassificationModel]] = {

@@ -36,8 +36,13 @@ class KANSearchSpace(HyperParameterModel):
         :type values_dict: dict[str, float | int]
         """
         K = self.Keys
+        for key, value in values_dict.items():
+            print(f"key: {key} {value}")
+        # hypers: dict[str, Union[float, int, str]] = {
+        #     K(key).value: value for key, value in values_dict.items()
+        # }
         hypers: dict[str, Union[float, int, str]] = {
-            K(key).value: value for key, value in values_dict.items()
+            key: value for key, value in values_dict.items()
         }
         return hypers
 
@@ -81,13 +86,14 @@ class MyKan(ClassificationModel):
         # Using logic of hidden_dims // 16 compared to an MLP Hidden dims, to mantain model capacity equivalence
         assert self.hyperparams is not None
 
-        key = self.search_space.HIDDEN_DIMS.value
+        key = self.search_space.HIDDEN_DIMS
+        print(f"KEY: {key}")
         kan_width = int(self.hyperparams.get(key, -1))
 
-        key = self.search_space.SPLINE_POL_ORDER.value
+        key = self.search_space.SPLINE_POL_ORDER
         spline_order = int(self.hyperparams.get(key, -1))
 
-        key = self.search_space.GRID.value
+        key = self.search_space.GRID
         grid = int(self.hyperparams.get(key, -1))
 
         assert kan_width > 0, "ERROR AT MODEL PARAMETERS: kan_width must be > 0!"

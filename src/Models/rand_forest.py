@@ -30,22 +30,20 @@ class RandomForestHyperParameters(HyperParameterModel):
     ) -> dict[str, float | int | str]:
         """Apply suggested hyperparameters from values_dict."""
         return {
-            self.Keys.N_ESTIMATORS.value: int(
-                values_dict.get(self.Keys.N_ESTIMATORS.value, self.n_estimators)
+            self.Keys.N_ESTIMATORS: int(
+                values_dict.get(self.Keys.N_ESTIMATORS, self.n_estimators)
             ),
-            self.Keys.MAX_DEPTH.value: int(
-                values_dict.get(self.Keys.MAX_DEPTH.value, self.max_depth)
+            self.Keys.MAX_DEPTH: int(
+                values_dict.get(self.Keys.MAX_DEPTH, self.max_depth)
             ),
-            self.Keys.MIN_SAMPLES_SPLIT.value: int(
-                values_dict.get(
-                    self.Keys.MIN_SAMPLES_SPLIT.value, self.min_samples_split
-                )
+            self.Keys.MIN_SAMPLES_SPLIT: int(
+                values_dict.get(self.Keys.MIN_SAMPLES_SPLIT, self.min_samples_split)
             ),
-            self.Keys.MIN_SAMPLES_LEAF.value: int(
-                values_dict.get(self.Keys.MIN_SAMPLES_LEAF.value, self.min_samples_leaf)
+            self.Keys.MIN_SAMPLES_LEAF: int(
+                values_dict.get(self.Keys.MIN_SAMPLES_LEAF, self.min_samples_leaf)
             ),
-            self.Keys.MAX_FEATURES.value: str(
-                values_dict.get(self.Keys.MAX_FEATURES.value, self.max_features)
+            self.Keys.MAX_FEATURES: str(
+                values_dict.get(self.Keys.MAX_FEATURES, self.max_features)
             ),
         }
 
@@ -53,28 +51,24 @@ class RandomForestHyperParameters(HyperParameterModel):
         """Suggest hyperparameters using Optuna trial."""
         if trial is None:
             return {
-                self.Keys.N_ESTIMATORS.value: self.n_estimators,
-                self.Keys.MAX_DEPTH.value: self.max_depth,
-                self.Keys.MIN_SAMPLES_SPLIT.value: self.min_samples_split,
-                self.Keys.MIN_SAMPLES_LEAF.value: self.min_samples_leaf,
-                self.Keys.MAX_FEATURES.value: self.max_features,
+                self.Keys.N_ESTIMATORS: self.n_estimators,
+                self.Keys.MAX_DEPTH: self.max_depth,
+                self.Keys.MIN_SAMPLES_SPLIT: self.min_samples_split,
+                self.Keys.MIN_SAMPLES_LEAF: self.min_samples_leaf,
+                self.Keys.MAX_FEATURES: self.max_features,
             }
 
         return {
-            self.Keys.N_ESTIMATORS.value: trial.suggest_int(
-                self.Keys.N_ESTIMATORS.value, 50, 300
+            self.Keys.N_ESTIMATORS: trial.suggest_int(self.Keys.N_ESTIMATORS, 50, 300),
+            self.Keys.MAX_DEPTH: trial.suggest_int(self.Keys.MAX_DEPTH, 5, 30),
+            self.Keys.MIN_SAMPLES_SPLIT: trial.suggest_int(
+                self.Keys.MIN_SAMPLES_SPLIT, 2, 10
             ),
-            self.Keys.MAX_DEPTH.value: trial.suggest_int(
-                self.Keys.MAX_DEPTH.value, 5, 30
+            self.Keys.MIN_SAMPLES_LEAF: trial.suggest_int(
+                self.Keys.MIN_SAMPLES_LEAF, 1, 5
             ),
-            self.Keys.MIN_SAMPLES_SPLIT.value: trial.suggest_int(
-                self.Keys.MIN_SAMPLES_SPLIT.value, 2, 10
-            ),
-            self.Keys.MIN_SAMPLES_LEAF.value: trial.suggest_int(
-                self.Keys.MIN_SAMPLES_LEAF.value, 1, 5
-            ),
-            self.Keys.MAX_FEATURES.value: trial.suggest_categorical(
-                self.Keys.MAX_FEATURES.value, ["sqrt", "log2"]
+            self.Keys.MAX_FEATURES: trial.suggest_categorical(
+                self.Keys.MAX_FEATURES, ["sqrt", "log2"]
             ),
         }
 

@@ -26,12 +26,12 @@ from Models.utils import analyse_test
 class SuperKeys(str, Enum):
     """Base interface for all hyperparameter key enums."""
 
-    BATCH_SIZE = "batch_size"
-
+    # BATCH_SIZE = "batch_size"
+    
 
 # classe comum para todos os definidores de hyperparametros
 class HyperParameterModel(abc.ABC):
-    Keys_: Type[SuperKeys]
+    Keys: Type[SuperKeys]
 
     @abc.abstractmethod
     def suggest(self, values_dict: dict[str, Any]) -> dict[str, Any]:
